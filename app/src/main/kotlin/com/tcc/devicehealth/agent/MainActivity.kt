@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,9 +31,6 @@ class MainActivity : ComponentActivity() {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 AgentScreen(
                     state = state,
-                    onRefresh = viewModel::refresh,
-                    onSync = viewModel::sync,
-                    onCheckCommands = viewModel::checkCommands,
                 )
             }
         }
@@ -44,9 +40,6 @@ class MainActivity : ComponentActivity() {
 @androidx.compose.runtime.Composable
 fun AgentScreen(
     state: AgentUiState,
-    onRefresh: () -> Unit,
-    onSync: () -> Unit,
-    onCheckCommands: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -56,15 +49,6 @@ fun AgentScreen(
     ) {
         Text("Device Health Agent", style = MaterialTheme.typography.headlineMedium)
         DeviceTelemetryCard(state.telemetry)
-        Button(onClick = onRefresh, enabled = !state.isLoading, modifier = Modifier.fillMaxWidth()) {
-            Text("Refresh local data")
-        }
-        Button(onClick = onSync, enabled = !state.isLoading, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.isLoading) "Working..." else "Sync telemetry")
-        }
-        Button(onClick = onCheckCommands, enabled = !state.isLoading, modifier = Modifier.fillMaxWidth()) {
-            Text("Check controller commands")
-        }
         state.message?.let { message ->
             Text(message, style = MaterialTheme.typography.bodyMedium)
         }

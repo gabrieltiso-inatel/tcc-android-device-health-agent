@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.isActive
 
 data class AgentUiState(
     val telemetry: DeviceTelemetry? = null,
@@ -24,6 +26,8 @@ class AgentViewModel(
 
     init {
         refresh()
+        sync()
+        startPolling()
     }
 
     fun refresh() {
@@ -41,6 +45,22 @@ class AgentViewModel(
             },
             operation = { repository.checkCommands() },
         )
+    }
+
+    private fun startPolling() {
+        viewModelScope.launch {
+            while (isActive) {
+                delay(30_000)
+                val result = withContext(Dispatchers.IO) { repository.checkCommands() }
+                val processedCount = result.getOrNull() ?: 0
+                if (processedCount > 0) {
+                    mutableState.value = mutableState.value.copy(
+                        telemetry = repository.readTelemetry(),
+                        message = "$processedCount command(s) completed",
+                    )
+                }
+            }
+        }
     }
 
     private fun runOperation(successMessage: String, operation: () -> Result<Unit>) {

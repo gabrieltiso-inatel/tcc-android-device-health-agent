@@ -1,6 +1,6 @@
 # Device Health Agent
 
-Agente Android do primeiro fluxo ponta a ponta. Ele mostra nome e bateria localmente, envia telemetria ao controlador e executa o comando `collectTelemetry`.
+Agente Android do primeiro fluxo ponta a ponta. Ele mostra nome e bateria localmente, envia telemetria ao controlador, consulta comandos por polling e executa `collectTelemetry`.
 
 ## Abrir e executar
 
@@ -29,5 +29,7 @@ Para testar com telefone físico, substitua o endereço pelo IP LAN do computado
 4. Clique em **Collect telemetry** no controlador.
 5. No agente, toque em **Check controller commands**.
 6. Confirme no agente a mensagem de comando concluído e no dashboard a nova telemetria.
+
+Enquanto a tela do agente está aberta, ele consulta comandos automaticamente a cada 30 segundos. A interface do agente não expõe controles de telemetria; controles serão adicionados apenas para ações de gerenciamento.
 
 Nesta primeira versão, o identificador do dispositivo é um UUID aleatório persistido apenas no armazenamento privado do app. Não são usados identificadores de hardware.
