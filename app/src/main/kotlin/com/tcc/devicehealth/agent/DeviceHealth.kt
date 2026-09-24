@@ -5,11 +5,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
-import java.util.UUID
 
 data class DeviceTelemetry(
     val deviceId: String,
@@ -25,18 +26,17 @@ data class ControllerCommand(
 )
 
 interface DeviceHealthRepository {
-    fun readTelemetry(): DeviceTelemetry
-    fun sendTelemetry(): Result<Unit>
-    fun checkCommands(): Result<Int>
+    suspend fun readTelemetry(): DeviceTelemetry
+    suspend fun sendTelemetry(): Result<Unit>
+    suspend fun checkCommands(): Result<Int>
 }
 
 class AndroidDeviceHealthRepository(
     private val context: Context,
     private val controllerBaseUrl: String,
+    private val preferences: AgentPreferences = AgentPreferences(context),
 ) : DeviceHealthRepository {
-    private val preferences = context.getSharedPreferences("device_health_agent", Context.MODE_PRIVATE)
-
-    override fun readTelemetry(): DeviceTelemetry {
+    override suspend fun readTelemetry(): DeviceTelemetry {
         val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
@@ -46,7 +46,7 @@ class AndroidDeviceHealthRepository(
             status == BatteryManager.BATTERY_STATUS_FULL
 
         return DeviceTelemetry(
-            deviceId = getDeviceId(),
+            deviceId = preferences.getDeviceId(),
             deviceName = listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").trim(),
             batteryPercentage = percentage,
             isCharging = isCharging,
@@ -54,7 +54,7 @@ class AndroidDeviceHealthRepository(
         )
     }
 
-    override fun sendTelemetry(): Result<Unit> = runCatching {
+    override suspend fun sendTelemetry(): Result<Unit> = runCatching {
         val telemetry = readTelemetry()
         val body = JSONObject()
             .put("deviceName", telemetry.deviceName)
@@ -62,20 +62,24 @@ class AndroidDeviceHealthRepository(
             .put("isCharging", telemetry.isCharging)
             .put("capturedAt", telemetry.capturedAt)
 
-        request(
-            method = "POST",
-            path = "/api/devices/${telemetry.deviceId}/telemetry",
-            body = body.toString(),
-        )
+        withContext(Dispatchers.IO) {
+            request(
+                method = "POST",
+                path = "/api/devices/${telemetry.deviceId}/telemetry",
+                body = body.toString(),
+            )
+        }
         Unit
     }
 
-    override fun checkCommands(): Result<Int> = runCatching {
+    override suspend fun checkCommands(): Result<Int> = runCatching {
         val telemetry = readTelemetry()
-        val commandResponse = request(
-            method = "GET",
-            path = "/api/devices/${telemetry.deviceId}/commands",
-        )
+        val commandResponse = withContext(Dispatchers.IO) {
+            request(
+                method = "GET",
+                path = "/api/devices/${telemetry.deviceId}/commands",
+            )
+        }
         val commands = JSONObject(commandResponse).getJSONArray("commands")
         var processedCount = 0
 
@@ -92,7 +96,7 @@ class AndroidDeviceHealthRepository(
         processedCount
     }
 
-    private fun executeCommand(command: ControllerCommand) {
+    private suspend fun executeCommand(command: ControllerCommand) {
         val result = runCatching {
             if (command.type != "collectTelemetry") {
                 error("Unsupported command type")
@@ -104,22 +108,13 @@ class AndroidDeviceHealthRepository(
             .put("succeeded", result.isSuccess)
             .put("message", result.getOrElse { it.message ?: "Command failed" })
 
-        request(
-            method = "POST",
-            path = "/api/commands/${command.id}/result",
-            body = body.toString(),
-        )
-    }
-
-    private fun getDeviceId(): String {
-        val storedDeviceId = preferences.getString("device_id", null)
-        if (storedDeviceId != null) {
-            return storedDeviceId
+        withContext(Dispatchers.IO) {
+            request(
+                method = "POST",
+                path = "/api/commands/${command.id}/result",
+                body = body.toString(),
+            )
         }
-
-        val deviceId = UUID.randomUUID().toString()
-        preferences.edit().putString("device_id", deviceId).apply()
-        return deviceId
     }
 
     private fun request(method: String, path: String, body: String? = null): String {

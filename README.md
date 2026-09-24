@@ -24,12 +24,12 @@ Para testar com telefone físico, substitua o endereço pelo IP LAN do computado
 ## Fluxo manual
 
 1. Inicie o controlador em `http://localhost:3000`.
-2. No agente, toque em **Sync telemetry**.
+2. Abra o agente e aguarde o envio automático da telemetria.
 3. Atualize o dashboard do controlador e confirme o dispositivo.
 4. Clique em **Collect telemetry** no controlador.
-5. No agente, toque em **Check controller commands**.
-6. Confirme no agente a mensagem de comando concluído e no dashboard a nova telemetria.
+5. Aguarde o polling do agente processar o comando.
+6. Confirme no dashboard a nova telemetria e o histórico do comando.
 
-Enquanto a tela do agente está aberta, ele consulta comandos automaticamente a cada 30 segundos. A interface do agente não expõe controles de telemetria; controles serão adicionados apenas para ações de gerenciamento.
+Enquanto a tela do agente está aberta, ele consulta comandos automaticamente a cada 30 segundos. Em segundo plano, o WorkManager consulta comandos periodicamente quando há rede; o Android define o instante exato e não garante execução em tempo real. A interface do agente não expõe controles de telemetria; controles serão adicionados apenas para ações de gerenciamento.
 
 Nesta primeira versão, o identificador do dispositivo é um UUID aleatório persistido apenas no armazenamento privado do app. Não são usados identificadores de hardware.

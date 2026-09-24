@@ -25,13 +25,14 @@ class AgentViewModel(
     val state: StateFlow<AgentUiState> = mutableState.asStateFlow()
 
     init {
-        refresh()
         sync()
         startPolling()
     }
 
     fun refresh() {
-        mutableState.value = mutableState.value.copy(telemetry = repository.readTelemetry())
+        viewModelScope.launch {
+            mutableState.value = mutableState.value.copy(telemetry = repository.readTelemetry())
+        }
     }
 
     fun sync() {
@@ -63,11 +64,11 @@ class AgentViewModel(
         }
     }
 
-    private fun runOperation(successMessage: String, operation: () -> Result<Unit>) {
+    private fun runOperation(successMessage: String, operation: suspend () -> Result<Unit>) {
         runOperation({ successMessage }, operation)
     }
 
-    private fun <T> runOperation(successMessage: (T) -> String, operation: () -> Result<T>) {
+    private fun <T> runOperation(successMessage: (T) -> String, operation: suspend () -> Result<T>) {
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isLoading = true, message = null)
             val result = withContext(Dispatchers.IO) { operation() }

@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CommandPollingScheduler.schedule(applicationContext)
         setContent {
             MaterialTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
