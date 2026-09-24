@@ -20,6 +20,9 @@ class CommandPollingWorker(
             context = applicationContext,
             controllerBaseUrl = BuildConfig.CONTROLLER_BASE_URL,
         )
+        if (!repository.isPaired()) {
+            return Result.success()
+        }
         return repository.checkCommands().fold(
             onSuccess = { Result.success() },
             onFailure = { Result.retry() },

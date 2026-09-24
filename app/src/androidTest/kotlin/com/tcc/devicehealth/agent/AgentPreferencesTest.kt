@@ -16,4 +16,5 @@ class AgentPreferencesTest {
 
         assertEquals(firstIdentifier, secondIdentifier)
     }
+
 }

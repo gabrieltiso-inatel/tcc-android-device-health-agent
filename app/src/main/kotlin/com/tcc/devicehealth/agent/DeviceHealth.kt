@@ -27,6 +27,8 @@ data class ControllerCommand(
 
 interface DeviceHealthRepository {
     suspend fun readTelemetry(): DeviceTelemetry
+    suspend fun isPaired(): Boolean
+    suspend fun pair(code: String): Result<Unit>
     suspend fun sendTelemetry(): Result<Unit>
     suspend fun checkCommands(): Result<Int>
 }
@@ -54,8 +56,23 @@ class AndroidDeviceHealthRepository(
         )
     }
 
+    override suspend fun isPaired(): Boolean = preferences.getToken() != null
+
+    override suspend fun pair(code: String): Result<Unit> = runCatching {
+        val telemetry = readTelemetry()
+        val body = JSONObject()
+            .put("code", code)
+            .put("deviceId", telemetry.deviceId)
+            .put("deviceName", telemetry.deviceName)
+        val response = withContext(Dispatchers.IO) {
+            request(method = "POST", path = "/api/devices/pair", body = body.toString())
+        }
+        preferences.saveToken(JSONObject(response).getString("token"))
+    }
+
     override suspend fun sendTelemetry(): Result<Unit> = runCatching {
         val telemetry = readTelemetry()
+        val token = requireToken()
         val body = JSONObject()
             .put("deviceName", telemetry.deviceName)
             .put("batteryPercentage", telemetry.batteryPercentage)
@@ -67,6 +84,7 @@ class AndroidDeviceHealthRepository(
                 method = "POST",
                 path = "/api/devices/${telemetry.deviceId}/telemetry",
                 body = body.toString(),
+                token = token,
             )
         }
         Unit
@@ -74,10 +92,12 @@ class AndroidDeviceHealthRepository(
 
     override suspend fun checkCommands(): Result<Int> = runCatching {
         val telemetry = readTelemetry()
+        val token = requireToken()
         val commandResponse = withContext(Dispatchers.IO) {
             request(
                 method = "GET",
                 path = "/api/devices/${telemetry.deviceId}/commands",
+                token = token,
             )
         }
         val commands = JSONObject(commandResponse).getJSONArray("commands")
@@ -97,6 +117,7 @@ class AndroidDeviceHealthRepository(
     }
 
     private suspend fun executeCommand(command: ControllerCommand) {
+        val token = requireToken()
         val result = runCatching {
             if (command.type != "collectTelemetry") {
                 error("Unsupported command type")
@@ -113,16 +134,22 @@ class AndroidDeviceHealthRepository(
                 method = "POST",
                 path = "/api/commands/${command.id}/result",
                 body = body.toString(),
+                token = token,
             )
         }
     }
 
-    private fun request(method: String, path: String, body: String? = null): String {
+    private suspend fun requireToken(): String = checkNotNull(preferences.getToken()) {
+        "Device is not paired"
+    }
+
+    private fun request(method: String, path: String, body: String? = null, token: String? = null): String {
         val connection = (URL(controllerBaseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection)
         connection.requestMethod = method
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
         connection.setRequestProperty("accept", "application/json")
+        token?.let { connection.setRequestProperty("authorization", "Bearer $it") }
 
         if (body != null) {
             connection.doOutput = true

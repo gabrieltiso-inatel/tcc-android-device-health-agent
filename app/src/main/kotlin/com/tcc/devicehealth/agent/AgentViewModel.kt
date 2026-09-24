@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +15,9 @@ import kotlinx.coroutines.isActive
 
 data class AgentUiState(
     val telemetry: DeviceTelemetry? = null,
+    val isReady: Boolean = false,
+    val isPaired: Boolean = false,
+    val pairingCode: String = "",
     val isLoading: Boolean = false,
     val message: String? = null,
 )
@@ -23,10 +27,36 @@ class AgentViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = mutableState.asStateFlow()
+    private var pollingJob: Job? = null
 
     init {
-        sync()
-        startPolling()
+        initialize()
+    }
+
+    fun updatePairingCode(code: String) {
+        mutableState.value = mutableState.value.copy(pairingCode = code.filter(Char::isDigit).take(6))
+    }
+
+    fun pair() {
+        val code = mutableState.value.pairingCode
+        if (code.length != 6) {
+            mutableState.value = mutableState.value.copy(message = "Enter the six-digit pairing code")
+            return
+        }
+        viewModelScope.launch {
+            mutableState.value = mutableState.value.copy(isLoading = true, message = null)
+            val result = withContext(Dispatchers.IO) { repository.pair(code) }
+            if (result.isSuccess) {
+                mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = "Device paired")
+                sync()
+                startPolling()
+            } else {
+                mutableState.value = mutableState.value.copy(
+                    isLoading = false,
+                    message = result.exceptionOrNull()?.message ?: "Pairing failed",
+                )
+            }
+        }
     }
 
     fun refresh() {
@@ -49,7 +79,10 @@ class AgentViewModel(
     }
 
     private fun startPolling() {
-        viewModelScope.launch {
+        if (pollingJob != null) {
+            return
+        }
+        pollingJob = viewModelScope.launch {
             while (isActive) {
                 delay(30_000)
                 val result = withContext(Dispatchers.IO) { repository.checkCommands() }
@@ -60,6 +93,22 @@ class AgentViewModel(
                         message = "$processedCount command(s) completed",
                     )
                 }
+            }
+        }
+    }
+
+    private fun initialize() {
+        viewModelScope.launch {
+            val telemetry = repository.readTelemetry()
+            val isPaired = repository.isPaired()
+            mutableState.value = mutableState.value.copy(
+                telemetry = telemetry,
+                isReady = true,
+                isPaired = isPaired,
+            )
+            if (isPaired) {
+                sync()
+                startPolling()
             }
         }
     }

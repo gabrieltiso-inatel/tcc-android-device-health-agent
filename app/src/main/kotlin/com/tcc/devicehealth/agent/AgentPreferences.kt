@@ -5,6 +5,7 @@ import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.first
 import java.util.UUID
 
 private const val PREFERENCES_NAME = "device_health_agent"
@@ -31,7 +32,14 @@ class AgentPreferences(
         return deviceId
     }
 
+    suspend fun getToken(): String? = dataStore.data.first()[tokenKey]
+
+    suspend fun saveToken(token: String) {
+        dataStore.edit { preferences -> preferences[tokenKey] = token }
+    }
+
     private companion object {
         val deviceIdKey = stringPreferencesKey("device_id")
+        val tokenKey = stringPreferencesKey("controller_token")
     }
 }
