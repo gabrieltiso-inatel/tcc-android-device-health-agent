@@ -11,10 +11,17 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
+import java.io.IOException
 
 data class DeviceTelemetry(
     val deviceId: String,
     val deviceName: String,
+    val manufacturer: String,
+    val model: String,
+    val androidVersion: String,
+    val apiLevel: Int,
+    val agentVersion: String,
+    val capabilities: List<String>,
     val batteryPercentage: Int,
     val isCharging: Boolean,
     val capturedAt: String,
@@ -24,6 +31,36 @@ data class ControllerCommand(
     val id: String,
     val type: String,
 )
+
+internal class RetryableControllerException(cause: Throwable? = null) :
+    Exception("Controller is temporarily unavailable", cause)
+
+private class ControllerResponseException(val statusCode: Int) :
+    Exception("Controller rejected the request")
+
+private class UnsupportedCommandException : Exception("Command is not supported")
+
+internal fun storedCommandResult(execution: Result<String>): StoredCommandResult? {
+    val failure = execution.exceptionOrNull()
+    if (failure is RetryableControllerException) {
+        return null
+    }
+    return if (failure == null) {
+        StoredCommandResult(succeeded = true, message = execution.getOrThrow())
+    } else if (failure is UnsupportedCommandException) {
+        StoredCommandResult(
+            succeeded = false,
+            message = "Command is not supported",
+            errorCode = "unsupported_command",
+        )
+    } else {
+        StoredCommandResult(
+            succeeded = false,
+            message = "Command execution failed",
+            errorCode = "execution_failed",
+        )
+    }
+}
 
 interface DeviceHealthRepository {
     suspend fun readTelemetry(): DeviceTelemetry
@@ -50,6 +87,12 @@ class AndroidDeviceHealthRepository(
         return DeviceTelemetry(
             deviceId = preferences.getDeviceId(),
             deviceName = listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").trim(),
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            androidVersion = Build.VERSION.RELEASE,
+            apiLevel = Build.VERSION.SDK_INT,
+            agentVersion = BuildConfig.VERSION_NAME,
+            capabilities = listOf("collectTelemetry"),
             batteryPercentage = percentage,
             isCharging = isCharging,
             capturedAt = Instant.now().toString(),
@@ -64,8 +107,15 @@ class AndroidDeviceHealthRepository(
             .put("code", code)
             .put("deviceId", telemetry.deviceId)
             .put("deviceName", telemetry.deviceName)
-        val response = withContext(Dispatchers.IO) {
-            request(method = "POST", path = "/api/devices/pair", body = body.toString())
+        val response = try {
+            withContext(Dispatchers.IO) {
+                request(method = "POST", path = "/api/devices/pair", body = body.toString())
+            }
+        } catch (error: ControllerResponseException) {
+            if (error.statusCode == 400) {
+                throw IllegalStateException("Pairing code is invalid or expired")
+            }
+            throw error
         }
         preferences.saveToken(JSONObject(response).getString("token"))
     }
@@ -75,6 +125,12 @@ class AndroidDeviceHealthRepository(
         val token = requireToken()
         val body = JSONObject()
             .put("deviceName", telemetry.deviceName)
+            .put("manufacturer", telemetry.manufacturer)
+            .put("model", telemetry.model)
+            .put("androidVersion", telemetry.androidVersion)
+            .put("apiLevel", telemetry.apiLevel)
+            .put("agentVersion", telemetry.agentVersion)
+            .put("capabilities", org.json.JSONArray(telemetry.capabilities))
             .put("batteryPercentage", telemetry.batteryPercentage)
             .put("isCharging", telemetry.isCharging)
             .put("capturedAt", telemetry.capturedAt)
@@ -121,19 +177,18 @@ class AndroidDeviceHealthRepository(
         val result = preferences.getCommandResult(command.id) ?: run {
             val execution = runCatching {
                 if (command.type != "collectTelemetry") {
-                    error("Unsupported command type")
+                    throw UnsupportedCommandException()
                 }
                 sendTelemetry().getOrThrow()
                 "Telemetry sent"
             }
-            StoredCommandResult(
-                succeeded = execution.isSuccess,
-                message = execution.getOrElse { it.message ?: "Command failed" },
-            ).also { preferences.saveCommandResult(command.id, it) }
+            val storedResult = storedCommandResult(execution) ?: throw execution.exceptionOrNull()!!
+            storedResult.also { preferences.saveCommandResult(command.id, it) }
         }
         val body = JSONObject()
             .put("succeeded", result.succeeded)
             .put("message", result.message)
+        result.errorCode?.let { errorCode -> body.put("errorCode", errorCode) }
 
         withContext(Dispatchers.IO) {
             request(
@@ -150,27 +205,39 @@ class AndroidDeviceHealthRepository(
     }
 
     private fun request(method: String, path: String, body: String? = null, token: String? = null): String {
-        val connection = (URL(controllerBaseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection)
-        connection.requestMethod = method
-        connection.connectTimeout = 10_000
-        connection.readTimeout = 10_000
-        connection.setRequestProperty("accept", "application/json")
-        token?.let { connection.setRequestProperty("authorization", "Bearer $it") }
+        var connection: HttpURLConnection? = null
+        try {
+            connection = URL(controllerBaseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection
+            connection.requestMethod = method
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
+            connection.setRequestProperty("accept", "application/json")
+            token?.let { connection.setRequestProperty("authorization", "Bearer $it") }
 
-        if (body != null) {
-            connection.doOutput = true
-            connection.setRequestProperty("content-type", "application/json; charset=utf-8")
-            connection.outputStream.bufferedWriter().use { writer -> writer.write(body) }
+            if (body != null) {
+                connection.doOutput = true
+                connection.setRequestProperty("content-type", "application/json; charset=utf-8")
+                connection.outputStream.bufferedWriter().use { writer -> writer.write(body) }
+            }
+
+            val statusCode = connection.responseCode
+            val responseBody = (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+                ?.bufferedReader()
+                ?.use { reader -> reader.readText() }
+                .orEmpty()
+            if (statusCode in 200..299) {
+                return responseBody
+            }
+            if (statusCode == 408 || statusCode == 429 || statusCode >= 500) {
+                throw RetryableControllerException()
+            }
+            throw ControllerResponseException(statusCode)
+        } catch (error: RetryableControllerException) {
+            throw error
+        } catch (error: IOException) {
+            throw RetryableControllerException(error)
+        } finally {
+            connection?.disconnect()
         }
-
-        val statusCode = connection.responseCode
-        val responseBody = (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
-            ?.bufferedReader()
-            ?.use { reader -> reader.readText() }
-            .orEmpty()
-        connection.disconnect()
-
-        check(statusCode in 200..299) { "Controller returned HTTP $statusCode: $responseBody" }
-        return responseBody
     }
 }

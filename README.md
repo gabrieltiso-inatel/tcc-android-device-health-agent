@@ -1,6 +1,6 @@
 # Device Health Agent
 
-Agente Android do primeiro fluxo ponta a ponta. Ele mostra nome e bateria localmente, envia telemetria ao controlador, consulta comandos por polling e executa `collectTelemetry`.
+Agente Android do primeiro fluxo ponta a ponta. Ele mostra nome e bateria localmente, envia telemetria e capacidades ao controlador, consulta comandos por polling e executa `collectTelemetry`.
 
 ## Abrir e executar
 

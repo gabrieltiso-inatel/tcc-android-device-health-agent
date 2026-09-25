@@ -20,6 +20,7 @@ private val Context.agentDataStore by preferencesDataStore(
 data class StoredCommandResult(
     val succeeded: Boolean,
     val message: String,
+    val errorCode: String? = null,
 )
 
 class AgentPreferences(
@@ -48,13 +49,17 @@ class AgentPreferences(
         val preferences = dataStore.data.first()
         val succeeded = preferences[commandSucceededKey(commandId)] ?: return null
         val message = preferences[commandMessageKey(commandId)] ?: return null
-        return StoredCommandResult(succeeded, message)
+        val errorCode = preferences[commandErrorCodeKey(commandId)]
+        return StoredCommandResult(succeeded, message, errorCode)
     }
 
     suspend fun saveCommandResult(commandId: String, result: StoredCommandResult) {
         dataStore.edit { preferences ->
             preferences[commandSucceededKey(commandId)] = result.succeeded
             preferences[commandMessageKey(commandId)] = result.message
+            result.errorCode?.let { errorCode ->
+                preferences[commandErrorCodeKey(commandId)] = errorCode
+            }
         }
     }
 
@@ -65,5 +70,7 @@ class AgentPreferences(
         fun commandSucceededKey(commandId: String) = booleanPreferencesKey("command_${commandId}_succeeded")
 
         fun commandMessageKey(commandId: String) = stringPreferencesKey("command_${commandId}_message")
+
+        fun commandErrorCodeKey(commandId: String) = stringPreferencesKey("command_${commandId}_error_code")
     }
 }
