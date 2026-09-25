@@ -118,16 +118,22 @@ class AndroidDeviceHealthRepository(
 
     private suspend fun executeCommand(command: ControllerCommand) {
         val token = requireToken()
-        val result = runCatching {
-            if (command.type != "collectTelemetry") {
-                error("Unsupported command type")
+        val result = preferences.getCommandResult(command.id) ?: run {
+            val execution = runCatching {
+                if (command.type != "collectTelemetry") {
+                    error("Unsupported command type")
+                }
+                sendTelemetry().getOrThrow()
+                "Telemetry sent"
             }
-            sendTelemetry().getOrThrow()
-            "Telemetry sent"
+            StoredCommandResult(
+                succeeded = execution.isSuccess,
+                message = execution.getOrElse { it.message ?: "Command failed" },
+            ).also { preferences.saveCommandResult(command.id, it) }
         }
         val body = JSONObject()
-            .put("succeeded", result.isSuccess)
-            .put("message", result.getOrElse { it.message ?: "Command failed" })
+            .put("succeeded", result.succeeded)
+            .put("message", result.message)
 
         withContext(Dispatchers.IO) {
             request(

@@ -3,6 +3,7 @@ package com.tcc.devicehealth.agent
 import android.content.Context
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
@@ -14,6 +15,11 @@ private val Context.agentDataStore by preferencesDataStore(
     produceMigrations = { context ->
         listOf(SharedPreferencesMigration(context, PREFERENCES_NAME))
     },
+)
+
+data class StoredCommandResult(
+    val succeeded: Boolean,
+    val message: String,
 )
 
 class AgentPreferences(
@@ -38,8 +44,26 @@ class AgentPreferences(
         dataStore.edit { preferences -> preferences[tokenKey] = token }
     }
 
+    suspend fun getCommandResult(commandId: String): StoredCommandResult? {
+        val preferences = dataStore.data.first()
+        val succeeded = preferences[commandSucceededKey(commandId)] ?: return null
+        val message = preferences[commandMessageKey(commandId)] ?: return null
+        return StoredCommandResult(succeeded, message)
+    }
+
+    suspend fun saveCommandResult(commandId: String, result: StoredCommandResult) {
+        dataStore.edit { preferences ->
+            preferences[commandSucceededKey(commandId)] = result.succeeded
+            preferences[commandMessageKey(commandId)] = result.message
+        }
+    }
+
     private companion object {
         val deviceIdKey = stringPreferencesKey("device_id")
         val tokenKey = stringPreferencesKey("controller_token")
+
+        fun commandSucceededKey(commandId: String) = booleanPreferencesKey("command_${commandId}_succeeded")
+
+        fun commandMessageKey(commandId: String) = stringPreferencesKey("command_${commandId}_message")
     }
 }
