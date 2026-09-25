@@ -21,6 +21,7 @@ data class StoredCommandResult(
     val succeeded: Boolean,
     val message: String,
     val errorCode: String? = null,
+    val resultJson: String? = null,
 )
 
 class AgentPreferences(
@@ -50,7 +51,8 @@ class AgentPreferences(
         val succeeded = preferences[commandSucceededKey(commandId)] ?: return null
         val message = preferences[commandMessageKey(commandId)] ?: return null
         val errorCode = preferences[commandErrorCodeKey(commandId)]
-        return StoredCommandResult(succeeded, message, errorCode)
+        val resultJson = preferences[commandResultKey(commandId)]
+        return StoredCommandResult(succeeded, message, errorCode, resultJson)
     }
 
     suspend fun saveCommandResult(commandId: String, result: StoredCommandResult) {
@@ -59,6 +61,9 @@ class AgentPreferences(
             preferences[commandMessageKey(commandId)] = result.message
             result.errorCode?.let { errorCode ->
                 preferences[commandErrorCodeKey(commandId)] = errorCode
+            }
+            result.resultJson?.let { resultJson ->
+                preferences[commandResultKey(commandId)] = resultJson
             }
         }
     }
@@ -72,5 +77,7 @@ class AgentPreferences(
         fun commandMessageKey(commandId: String) = stringPreferencesKey("command_${commandId}_message")
 
         fun commandErrorCodeKey(commandId: String) = stringPreferencesKey("command_${commandId}_error_code")
+
+        fun commandResultKey(commandId: String) = stringPreferencesKey("command_${commandId}_result")
     }
 }

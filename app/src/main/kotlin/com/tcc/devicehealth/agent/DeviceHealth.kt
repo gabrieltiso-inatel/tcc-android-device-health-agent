@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Environment
+import android.os.StatFs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -32,6 +34,11 @@ data class ControllerCommand(
     val type: String,
 )
 
+data class CommandExecution(
+    val message: String,
+    val resultJson: String? = null,
+)
+
 internal class RetryableControllerException(cause: Throwable? = null) :
     Exception("Controller is temporarily unavailable", cause)
 
@@ -40,13 +47,18 @@ private class ControllerResponseException(val statusCode: Int) :
 
 private class UnsupportedCommandException : Exception("Command is not supported")
 
-internal fun storedCommandResult(execution: Result<String>): StoredCommandResult? {
+internal fun storedCommandResult(execution: Result<CommandExecution>): StoredCommandResult? {
     val failure = execution.exceptionOrNull()
     if (failure is RetryableControllerException) {
         return null
     }
     return if (failure == null) {
-        StoredCommandResult(succeeded = true, message = execution.getOrThrow())
+        val commandExecution = execution.getOrThrow()
+        StoredCommandResult(
+            succeeded = true,
+            message = commandExecution.message,
+            resultJson = commandExecution.resultJson,
+        )
     } else if (failure is UnsupportedCommandException) {
         StoredCommandResult(
             succeeded = false,
@@ -92,7 +104,7 @@ class AndroidDeviceHealthRepository(
             androidVersion = Build.VERSION.RELEASE,
             apiLevel = Build.VERSION.SDK_INT,
             agentVersion = BuildConfig.VERSION_NAME,
-            capabilities = listOf("collectTelemetry"),
+            capabilities = listOf("collectTelemetry", "collectStorageSummary"),
             batteryPercentage = percentage,
             isCharging = isCharging,
             capturedAt = Instant.now().toString(),
@@ -176,11 +188,14 @@ class AndroidDeviceHealthRepository(
         val token = requireToken()
         val result = preferences.getCommandResult(command.id) ?: run {
             val execution = runCatching {
-                if (command.type != "collectTelemetry") {
-                    throw UnsupportedCommandException()
+                when (command.type) {
+                    "collectTelemetry" -> {
+                        sendTelemetry().getOrThrow()
+                        CommandExecution("Telemetry sent")
+                    }
+                    "collectStorageSummary" -> collectStorageSummary()
+                    else -> throw UnsupportedCommandException()
                 }
-                sendTelemetry().getOrThrow()
-                "Telemetry sent"
             }
             val storedResult = storedCommandResult(execution) ?: throw execution.exceptionOrNull()!!
             storedResult.also { preferences.saveCommandResult(command.id, it) }
@@ -189,6 +204,7 @@ class AndroidDeviceHealthRepository(
             .put("succeeded", result.succeeded)
             .put("message", result.message)
         result.errorCode?.let { errorCode -> body.put("errorCode", errorCode) }
+        result.resultJson?.let { resultJson -> body.put("result", JSONObject(resultJson)) }
 
         withContext(Dispatchers.IO) {
             request(
@@ -198,6 +214,18 @@ class AndroidDeviceHealthRepository(
                 token = token,
             )
         }
+    }
+
+    private fun collectStorageSummary(): CommandExecution {
+        val storage = StatFs(Environment.getDataDirectory().path)
+        val totalBytes = storage.totalBytes
+        val availableBytes = storage.availableBytes
+        val result = JSONObject()
+            .put("totalBytes", totalBytes)
+            .put("usedBytes", totalBytes - availableBytes)
+            .put("availableBytes", availableBytes)
+            .put("capturedAt", Instant.now().toString())
+        return CommandExecution("Storage summary collected", result.toString())
     }
 
     private suspend fun requireToken(): String = checkNotNull(preferences.getToken()) {
