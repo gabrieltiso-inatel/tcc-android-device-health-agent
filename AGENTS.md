@@ -4,6 +4,42 @@
 
 This file defines the shared development rules for this Android repository. Follow these instructions unless a task explicitly requires otherwise.
 
+## Project Context
+
+Este repositório contém o agent Android do projeto Android Device Health, uma solução acadêmica para acompanhamento e gerenciamento de dispositivos Android em ambientes familiares.
+
+- O agent usa Kotlin e Jetpack Compose e inicia toda comunicação HTTP com o controlador.
+- O primeiro acesso usa um código temporário de pareamento; identidade, token e resultados necessários para idempotência ficam no armazenamento privado do app.
+- Telemetria e consulta de ações funcionam em primeiro plano e por WorkManager em segundo plano.
+- O estado enviado inclui identificação do dispositivo, bateria, versão do Android e capabilities.
+- O agent coleta resumo agregado de armazenamento e inventário dos aplicativos instalados pelo usuário sem acessar dados internos desses aplicativos.
+- Ações explícitas podem ter origem `controller` ou `device`, usam o mesmo `ActionExecutor` e são registradas no histórico mantido pelo controlador.
+- As ações atuais são `collectTelemetry`, `collectStorageSummary` e `collectAppInventory`.
+- Sincronizações automáticas representam estado observado e não devem criar entradas no histórico de ações.
+- Ações destrutivas ou privilegiadas exigem iniciativa explícita e devem respeitar permissões, consentimento e limitações de Device Owner/Profile Owner do Android.
+
+## Current Direction
+
+Esta seção mantém continuidade entre sessões curtas. Consulte-a antes de propor novos trabalhos e atualize-a sempre que uma etapa for concluída, removida ou repriorizada. Registre somente o estado atual e os próximos objetivos; detalhes históricos pertencem aos commits.
+
+Concluído:
+
+- framework unificado de ações com origem `controller` ou `device`;
+- histórico compartilhado de ações;
+- telemetria, resumo de armazenamento e inventário de aplicativos;
+- pareamento, autenticação, retry, expiração e idempotência.
+
+Próximo:
+
+- automatizar sincronizações de estado sem criar histórico de ações;
+- melhorar a apresentação do histórico compartilhado.
+
+Depois:
+
+- ampliar informações e ações explícitas sobre aplicativos;
+- acessar arquivos somente com consentimento do usuário;
+- avaliar capacidades privilegiadas com Device Owner/Profile Owner.
+
 ## Communication
 
 - Write explanations and responses in concise Brazilian Portuguese.
