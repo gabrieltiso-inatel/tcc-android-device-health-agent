@@ -6,7 +6,8 @@ O agent coleta estado local, inicia toda comunicação HTTP, executa ações e a
 
 ## Componentes atuais
 
-- `MainActivity` e Composables: renderização e interação;
+- `MainActivity`: composição da aplicação e conexão da UI ao ViewModel;
+- `AgentScreen`: renderização e interação da UI Compose;
 - `AgentViewModel`: estado imutável da interface e coordenação de eventos;
 - `DeviceHealthRepository`: casos de uso e coordenação dos fluxos;
 - `ControllerClient`: transporte HTTP e serialização;

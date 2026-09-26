@@ -32,10 +32,8 @@ class ActionPollingWorker(
 
 object ActionPollingScheduler {
     private const val workName = "action-polling"
-    private const val legacyWorkName = "command-polling"
 
     fun schedule(context: Context) {
-        WorkManager.getInstance(context).cancelUniqueWork(legacyWorkName)
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()

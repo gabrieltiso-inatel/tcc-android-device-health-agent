@@ -55,7 +55,7 @@ class AgentViewModel(
             } else {
                 mutableState.value = mutableState.value.copy(
                     isLoading = false,
-                    message = result.exceptionOrNull()?.message ?: "Pairing failed",
+                    message = "Pairing failed. Check the code and try again.",
                 )
             }
         }
@@ -84,7 +84,7 @@ class AgentViewModel(
                 telemetry = repository.readTelemetry(),
                 actions = actions,
                 isLoading = false,
-                message = result.fold({ "Action completed" }, { it.message ?: "Action failed" }),
+                message = result.fold({ "Action completed" }, { "Action failed. Try again." }),
             )
         }
     }
@@ -143,7 +143,7 @@ class AgentViewModel(
             mutableState.value = mutableState.value.copy(
                 telemetry = repository.readTelemetry(),
                 isLoading = false,
-                message = result.fold(successMessage) { it.message ?: "Operation failed" },
+                message = result.fold(successMessage) { "Operation failed. Try again." },
             )
         }
     }

@@ -70,8 +70,19 @@ class AndroidDeviceHealthRepository(
     private suspend fun executeAction(action: DeviceAction, token: String) {
         val result = preferences.getActionResult(action.id) ?: run {
             val execution = runCatching { actionExecutor.execute(action) }
-            val storedResult = storedActionResult(execution) ?: throw execution.exceptionOrNull()!!
-            storedResult.also { preferences.saveActionResult(action.id, it) }
+            val failure = execution.exceptionOrNull()
+            if (failure != null) {
+                val storedResult = storedActionResult(execution)
+                if (storedResult != null) {
+                    storedResult.also { preferences.saveActionResult(action.id, it) }
+                } else {
+                    throw failure
+                }
+            } else {
+                val storedResult = storedActionResult(execution)
+                    ?: error("Action execution did not produce a result")
+                storedResult.also { preferences.saveActionResult(action.id, it) }
+            }
         }
         controllerClient.sendActionResult(action.id, result, token)
     }

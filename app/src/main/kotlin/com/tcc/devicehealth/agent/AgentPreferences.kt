@@ -1,7 +1,6 @@
 package com.tcc.devicehealth.agent
 
 import android.content.Context
-import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -10,12 +9,7 @@ import kotlinx.coroutines.flow.first
 import java.util.UUID
 
 private const val PREFERENCES_NAME = "device_health_agent"
-private val Context.agentDataStore by preferencesDataStore(
-    name = PREFERENCES_NAME,
-    produceMigrations = { context ->
-        listOf(SharedPreferencesMigration(context, PREFERENCES_NAME))
-    },
-)
+private val Context.agentDataStore by preferencesDataStore(name = PREFERENCES_NAME)
 
 data class StoredActionResult(
     val succeeded: Boolean,
