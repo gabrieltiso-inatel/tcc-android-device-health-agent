@@ -17,9 +17,12 @@ class AndroidDeviceHealthRepository(
 ) : DeviceHealthRepository {
     private val telemetrySource = DeviceTelemetrySource(context.applicationContext, preferences)
     private val controllerClient = ControllerClient(controllerBaseUrl)
+    private val storageDataSource = StorageDataSource()
+    private val appInventoryDataSource = AppInventoryDataSource(context.applicationContext.packageManager)
     private val commandExecutor = CommandExecutor(
         sendTelemetry = { sendTelemetry().getOrThrow() },
-        storageDataSource = StorageDataSource(),
+        collectStorageSummary = storageDataSource::collectSummary,
+        collectAppInventory = appInventoryDataSource::collect,
     )
 
     override suspend fun readTelemetry(): DeviceTelemetry = telemetrySource.read()

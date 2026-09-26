@@ -4,14 +4,16 @@ internal class UnsupportedCommandException : Exception("Command is not supported
 
 internal class CommandExecutor(
     private val sendTelemetry: suspend () -> Unit,
-    private val storageDataSource: StorageDataSource,
+    private val collectStorageSummary: () -> CommandExecution,
+    private val collectAppInventory: () -> CommandExecution,
 ) {
     suspend fun execute(command: ControllerCommand): CommandExecution = when (command.type) {
         "collectTelemetry" -> {
             sendTelemetry()
             CommandExecution("Telemetry sent")
         }
-        "collectStorageSummary" -> storageDataSource.collectSummary()
+        "collectStorageSummary" -> collectStorageSummary()
+        "collectAppInventory" -> collectAppInventory()
         else -> throw UnsupportedCommandException()
     }
 }

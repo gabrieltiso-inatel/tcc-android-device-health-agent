@@ -37,3 +37,5 @@ Enquanto a tela do agente está aberta, ele consulta comandos automaticamente a 
 Nesta primeira versão, o identificador do dispositivo é um UUID aleatório persistido apenas no armazenamento privado do app. Não são usados identificadores de hardware. O token recebido no pareamento também permanece no DataStore privado do agente.
 
 O comando `collectStorageSummary` usa APIs públicas do Android e retorna somente espaço total, usado e disponível, sem listar arquivos ou solicitar permissões de armazenamento.
+
+O comando `collectAppInventory` retorna metadados básicos dos aplicativos instalados pelo usuário. Para cumprir esse caso de uso de gerenciamento, o agente declara visibilidade dos pacotes instalados, mas não acessa dados internos dos aplicativos.
