@@ -44,16 +44,40 @@ internal class ControllerClient(private val baseUrl: String) {
         )
     }
 
-    suspend fun getCommands(deviceId: String, token: String): List<ControllerCommand> {
-        val response = request(method = "GET", path = "/api/devices/$deviceId/commands", token = token)
-        val commands = JSONObject(response).getJSONArray("commands")
-        return List(commands.length()) { index ->
-            val command = commands.getJSONObject(index)
-            ControllerCommand(id = command.getString("id"), type = command.getString("type"))
-        }
+    suspend fun getPendingActions(deviceId: String, token: String): List<DeviceAction> {
+        val response = request(method = "GET", path = "/api/devices/$deviceId/actions", token = token)
+        val actions = JSONObject(response).getJSONArray("actions")
+        return List(actions.length()) { index -> parseAction(actions.getJSONObject(index)) }
     }
 
-    suspend fun sendCommandResult(commandId: String, result: StoredCommandResult, token: String) {
+    suspend fun createDeviceAction(deviceId: String, type: String, token: String): DeviceAction {
+        val body = JSONObject().put("type", type)
+        val response = request(
+            method = "POST",
+            path = "/api/devices/$deviceId/actions",
+            body = body.toString(),
+            token = token,
+        )
+        return parseAction(JSONObject(response).getJSONObject("action"))
+    }
+
+    suspend fun getActionHistory(deviceId: String, token: String): List<DeviceAction> {
+        val response = request(method = "GET", path = "/api/devices/$deviceId/history", token = token)
+        val actions = JSONObject(response).getJSONArray("actions")
+        return List(actions.length()) { index -> parseAction(actions.getJSONObject(index)) }
+    }
+
+    private fun parseAction(action: JSONObject): DeviceAction = DeviceAction(
+        id = action.getString("id"),
+        type = action.getString("type"),
+        origin = action.getString("origin"),
+        status = action.getString("status"),
+        requestedAt = action.getString("requestedAt"),
+        completedAt = action.optString("completedAt").ifEmpty { null },
+        resultMessage = action.optString("resultMessage").ifEmpty { null },
+    )
+
+    suspend fun sendActionResult(actionId: String, result: StoredActionResult, token: String) {
         val body = JSONObject()
             .put("succeeded", result.succeeded)
             .put("message", result.message)
@@ -61,7 +85,7 @@ internal class ControllerClient(private val baseUrl: String) {
         result.resultJson?.let { resultJson -> body.put("result", JSONObject(resultJson)) }
         request(
             method = "POST",
-            path = "/api/commands/$commandId/result",
+            path = "/api/actions/$actionId/result",
             body = body.toString(),
             token = token,
         )

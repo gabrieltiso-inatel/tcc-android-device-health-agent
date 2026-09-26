@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.time.Instant
 
 internal class StorageDataSource {
-    fun collectSummary(): CommandExecution {
+    fun collectSummary(): ActionExecution {
         val storage = StatFs(Environment.getDataDirectory().path)
         val totalBytes = storage.totalBytes
         val availableBytes = storage.availableBytes
@@ -16,6 +16,6 @@ internal class StorageDataSource {
             .put("availableBytes", availableBytes)
             .put("capturedAt", Instant.now().toString())
 
-        return CommandExecution("Storage summary collected", result.toString())
+        return ActionExecution("Storage summary collected", result.toString())
     }
 }

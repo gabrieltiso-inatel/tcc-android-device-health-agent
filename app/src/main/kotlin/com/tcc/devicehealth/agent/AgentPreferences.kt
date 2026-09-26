@@ -17,7 +17,7 @@ private val Context.agentDataStore by preferencesDataStore(
     },
 )
 
-data class StoredCommandResult(
+data class StoredActionResult(
     val succeeded: Boolean,
     val message: String,
     val errorCode: String? = null,
@@ -46,24 +46,24 @@ class AgentPreferences(
         dataStore.edit { preferences -> preferences[tokenKey] = token }
     }
 
-    suspend fun getCommandResult(commandId: String): StoredCommandResult? {
+    suspend fun getActionResult(actionId: String): StoredActionResult? {
         val preferences = dataStore.data.first()
-        val succeeded = preferences[commandSucceededKey(commandId)] ?: return null
-        val message = preferences[commandMessageKey(commandId)] ?: return null
-        val errorCode = preferences[commandErrorCodeKey(commandId)]
-        val resultJson = preferences[commandResultKey(commandId)]
-        return StoredCommandResult(succeeded, message, errorCode, resultJson)
+        val succeeded = preferences[actionSucceededKey(actionId)] ?: return null
+        val message = preferences[actionMessageKey(actionId)] ?: return null
+        val errorCode = preferences[actionErrorCodeKey(actionId)]
+        val resultJson = preferences[actionResultKey(actionId)]
+        return StoredActionResult(succeeded, message, errorCode, resultJson)
     }
 
-    suspend fun saveCommandResult(commandId: String, result: StoredCommandResult) {
+    suspend fun saveActionResult(actionId: String, result: StoredActionResult) {
         dataStore.edit { preferences ->
-            preferences[commandSucceededKey(commandId)] = result.succeeded
-            preferences[commandMessageKey(commandId)] = result.message
+            preferences[actionSucceededKey(actionId)] = result.succeeded
+            preferences[actionMessageKey(actionId)] = result.message
             result.errorCode?.let { errorCode ->
-                preferences[commandErrorCodeKey(commandId)] = errorCode
+                preferences[actionErrorCodeKey(actionId)] = errorCode
             }
             result.resultJson?.let { resultJson ->
-                preferences[commandResultKey(commandId)] = resultJson
+                preferences[actionResultKey(actionId)] = resultJson
             }
         }
     }
@@ -72,12 +72,12 @@ class AgentPreferences(
         val deviceIdKey = stringPreferencesKey("device_id")
         val tokenKey = stringPreferencesKey("controller_token")
 
-        fun commandSucceededKey(commandId: String) = booleanPreferencesKey("command_${commandId}_succeeded")
+        fun actionSucceededKey(actionId: String) = booleanPreferencesKey("action_${actionId}_succeeded")
 
-        fun commandMessageKey(commandId: String) = stringPreferencesKey("command_${commandId}_message")
+        fun actionMessageKey(actionId: String) = stringPreferencesKey("action_${actionId}_message")
 
-        fun commandErrorCodeKey(commandId: String) = stringPreferencesKey("command_${commandId}_error_code")
+        fun actionErrorCodeKey(actionId: String) = stringPreferencesKey("action_${actionId}_error_code")
 
-        fun commandResultKey(commandId: String) = stringPreferencesKey("command_${commandId}_result")
+        fun actionResultKey(actionId: String) = stringPreferencesKey("action_${actionId}_result")
     }
 }

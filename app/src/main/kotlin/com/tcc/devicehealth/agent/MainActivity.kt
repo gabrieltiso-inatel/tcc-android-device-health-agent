@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +30,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        CommandPollingScheduler.schedule(applicationContext)
+        ActionPollingScheduler.schedule(applicationContext)
         setContent {
             MaterialTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
@@ -36,6 +38,7 @@ class MainActivity : ComponentActivity() {
                     state = state,
                     onPairingCodeChange = viewModel::updatePairingCode,
                     onPair = viewModel::pair,
+                    onExecuteAction = viewModel::executeAction,
                 )
             }
         }
@@ -47,10 +50,12 @@ fun AgentScreen(
     state: AgentUiState,
     onPairingCodeChange: (String) -> Unit,
     onPair: () -> Unit,
+    onExecuteAction: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -59,6 +64,8 @@ fun AgentScreen(
             Text("Loading...")
         } else if (state.isPaired) {
             DeviceTelemetryCard(state.telemetry)
+            DeviceActionsCard(state.isLoading, onExecuteAction)
+            ActionHistoryCard(state.actions)
         } else {
             PairingCard(
                 code = state.pairingCode,
@@ -69,6 +76,56 @@ fun AgentScreen(
         }
         state.message?.let { message ->
             Text(message, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun DeviceActionsCard(isLoading: Boolean, onExecuteAction: (String) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Actions", style = MaterialTheme.typography.titleMedium)
+            Button(
+                onClick = { onExecuteAction("collectStorageSummary") },
+                enabled = !isLoading,
+            ) {
+                Text("Update storage")
+            }
+            Button(
+                onClick = { onExecuteAction("collectAppInventory") },
+                enabled = !isLoading,
+            ) {
+                Text("Update apps")
+            }
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun ActionHistoryCard(actions: List<DeviceAction>) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Action history", style = MaterialTheme.typography.titleMedium)
+            if (actions.isEmpty()) {
+                Text("No actions recorded yet.")
+            } else {
+                actions.forEach { action ->
+                    Text("${action.type} · ${action.status}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Origin: ${action.origin} · ${action.requestedAt}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    action.resultMessage?.let { message ->
+                        Text(message, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
         }
     }
 }

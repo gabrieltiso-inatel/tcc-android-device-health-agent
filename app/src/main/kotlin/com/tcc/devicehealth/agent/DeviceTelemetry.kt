@@ -14,12 +14,17 @@ data class DeviceTelemetry(
     val capturedAt: String,
 )
 
-data class ControllerCommand(
+data class DeviceAction(
     val id: String,
     val type: String,
+    val origin: String,
+    val status: String,
+    val requestedAt: String,
+    val completedAt: String? = null,
+    val resultMessage: String? = null,
 )
 
-data class CommandExecution(
+data class ActionExecution(
     val message: String,
     val resultJson: String? = null,
 )

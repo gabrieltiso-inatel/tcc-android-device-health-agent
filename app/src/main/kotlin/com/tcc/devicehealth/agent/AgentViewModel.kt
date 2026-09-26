@@ -18,6 +18,7 @@ data class AgentUiState(
     val isReady: Boolean = false,
     val isPaired: Boolean = false,
     val pairingCode: String = "",
+    val actions: List<DeviceAction> = emptyList(),
     val isLoading: Boolean = false,
     val message: String? = null,
 )
@@ -49,6 +50,7 @@ class AgentViewModel(
             if (result.isSuccess) {
                 mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = "Device paired")
                 sync()
+                loadActionHistory()
                 startPolling()
             } else {
                 mutableState.value = mutableState.value.copy(
@@ -69,13 +71,22 @@ class AgentViewModel(
         runOperation("Telemetry synchronized") { repository.sendTelemetry() }
     }
 
-    fun checkCommands() {
-        runOperation(
-            successMessage = { processedCount ->
-                if (processedCount == 0) "No pending commands" else "$processedCount command(s) completed"
-            },
-            operation = { repository.checkCommands() },
-        )
+    fun executeAction(type: String) {
+        viewModelScope.launch {
+            mutableState.value = mutableState.value.copy(isLoading = true, message = null)
+            val result = withContext(Dispatchers.IO) { repository.executeDeviceAction(type) }
+            val actions = if (result.isSuccess) {
+                repository.getActionHistory().getOrDefault(mutableState.value.actions)
+            } else {
+                mutableState.value.actions
+            }
+            mutableState.value = mutableState.value.copy(
+                telemetry = repository.readTelemetry(),
+                actions = actions,
+                isLoading = false,
+                message = result.fold({ "Action completed" }, { it.message ?: "Action failed" }),
+            )
+        }
     }
 
     private fun startPolling() {
@@ -85,12 +96,13 @@ class AgentViewModel(
         pollingJob = viewModelScope.launch {
             while (isActive) {
                 delay(30_000)
-                val result = withContext(Dispatchers.IO) { repository.checkCommands() }
+                val result = withContext(Dispatchers.IO) { repository.checkActions() }
                 val processedCount = result.getOrNull() ?: 0
                 if (processedCount > 0) {
+                    loadActionHistory()
                     mutableState.value = mutableState.value.copy(
                         telemetry = repository.readTelemetry(),
-                        message = "$processedCount command(s) completed",
+                        message = "$processedCount action(s) completed",
                     )
                 }
             }
@@ -107,9 +119,16 @@ class AgentViewModel(
                 isPaired = isPaired,
             )
             if (isPaired) {
+                loadActionHistory()
                 sync()
                 startPolling()
             }
+        }
+    }
+
+    private suspend fun loadActionHistory() {
+        repository.getActionHistory().getOrNull()?.let { actions ->
+            mutableState.value = mutableState.value.copy(actions = actions)
         }
     }
 

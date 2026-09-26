@@ -8,7 +8,7 @@ import org.json.JSONObject
 import java.time.Instant
 
 internal class AppInventoryDataSource(private val packageManager: PackageManager) {
-    fun collect(): CommandExecution {
+    fun collect(): ActionExecution {
         val applications = installedApplications()
             .filterNot { application -> application.flags and ApplicationInfo.FLAG_SYSTEM != 0 }
             .mapNotNull(::readApp)
@@ -16,7 +16,7 @@ internal class AppInventoryDataSource(private val packageManager: PackageManager
         val result = JSONObject()
             .put("capturedAt", Instant.now().toString())
             .put("apps", JSONArray(applications))
-        return CommandExecution("App inventory collected", result.toString())
+        return ActionExecution("App inventory collected", result.toString())
     }
 
     private fun installedApplications(): List<ApplicationInfo> = if (Build.VERSION.SDK_INT >= 33) {

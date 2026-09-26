@@ -7,7 +7,9 @@ interface DeviceHealthRepository {
     suspend fun isPaired(): Boolean
     suspend fun pair(code: String): Result<Unit>
     suspend fun sendTelemetry(): Result<Unit>
-    suspend fun checkCommands(): Result<Int>
+    suspend fun checkActions(): Result<Int>
+    suspend fun executeDeviceAction(type: String): Result<Unit>
+    suspend fun getActionHistory(): Result<List<DeviceAction>>
 }
 
 class AndroidDeviceHealthRepository(
@@ -19,7 +21,7 @@ class AndroidDeviceHealthRepository(
     private val controllerClient = ControllerClient(controllerBaseUrl)
     private val storageDataSource = StorageDataSource()
     private val appInventoryDataSource = AppInventoryDataSource(context.applicationContext.packageManager)
-    private val commandExecutor = CommandExecutor(
+    private val actionExecutor = ActionExecutor(
         sendTelemetry = { sendTelemetry().getOrThrow() },
         collectStorageSummary = storageDataSource::collectSummary,
         collectAppInventory = appInventoryDataSource::collect,
@@ -45,21 +47,33 @@ class AndroidDeviceHealthRepository(
         controllerClient.sendTelemetry(readTelemetry(), requireToken())
     }
 
-    override suspend fun checkCommands(): Result<Int> = runCatching {
+    override suspend fun checkActions(): Result<Int> = runCatching {
         val telemetry = readTelemetry()
         val token = requireToken()
-        val commands = controllerClient.getCommands(telemetry.deviceId, token)
-        commands.forEach { command -> executeCommand(command, token) }
-        commands.size
+        val actions = controllerClient.getPendingActions(telemetry.deviceId, token)
+        actions.forEach { action -> executeAction(action, token) }
+        actions.size
     }
 
-    private suspend fun executeCommand(command: ControllerCommand, token: String) {
-        val result = preferences.getCommandResult(command.id) ?: run {
-            val execution = runCatching { commandExecutor.execute(command) }
-            val storedResult = storedCommandResult(execution) ?: throw execution.exceptionOrNull()!!
-            storedResult.also { preferences.saveCommandResult(command.id, it) }
+    override suspend fun executeDeviceAction(type: String): Result<Unit> = runCatching {
+        val telemetry = readTelemetry()
+        val token = requireToken()
+        val action = controllerClient.createDeviceAction(telemetry.deviceId, type, token)
+        executeAction(action, token)
+    }
+
+    override suspend fun getActionHistory(): Result<List<DeviceAction>> = runCatching {
+        val telemetry = readTelemetry()
+        controllerClient.getActionHistory(telemetry.deviceId, requireToken())
+    }
+
+    private suspend fun executeAction(action: DeviceAction, token: String) {
+        val result = preferences.getActionResult(action.id) ?: run {
+            val execution = runCatching { actionExecutor.execute(action) }
+            val storedResult = storedActionResult(execution) ?: throw execution.exceptionOrNull()!!
+            storedResult.also { preferences.saveActionResult(action.id, it) }
         }
-        controllerClient.sendCommandResult(command.id, result, token)
+        controllerClient.sendActionResult(action.id, result, token)
     }
 
     private suspend fun requireToken(): String = checkNotNull(preferences.getToken()) {

@@ -18,14 +18,14 @@ class AgentPreferencesTest {
     }
 
     @Test
-    fun storesACommandResult() = runBlocking {
+    fun storesAnActionResult() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val preferences = AgentPreferences(context)
-        val result = StoredCommandResult(succeeded = true, message = "Telemetry sent")
+        val result = StoredActionResult(succeeded = true, message = "Telemetry sent")
 
-        preferences.saveCommandResult("test-command", result)
+        preferences.saveActionResult("test-action", result)
 
-        assertEquals(result, preferences.getCommandResult("test-command"))
+        assertEquals(result, preferences.getActionResult("test-action"))
     }
 
 }

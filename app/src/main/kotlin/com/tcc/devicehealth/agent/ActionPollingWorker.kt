@@ -11,7 +11,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
-class CommandPollingWorker(
+class ActionPollingWorker(
     applicationContext: Context,
     workerParameters: WorkerParameters,
 ) : CoroutineWorker(applicationContext, workerParameters) {
@@ -23,21 +23,23 @@ class CommandPollingWorker(
         if (!repository.isPaired()) {
             return Result.success()
         }
-        return repository.checkCommands().fold(
+        return repository.checkActions().fold(
             onSuccess = { Result.success() },
             onFailure = { Result.retry() },
         )
     }
 }
 
-object CommandPollingScheduler {
-    private const val workName = "command-polling"
+object ActionPollingScheduler {
+    private const val workName = "action-polling"
+    private const val legacyWorkName = "command-polling"
 
     fun schedule(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(legacyWorkName)
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-        val request = PeriodicWorkRequestBuilder<CommandPollingWorker>(15, TimeUnit.MINUTES)
+        val request = PeriodicWorkRequestBuilder<ActionPollingWorker>(15, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
