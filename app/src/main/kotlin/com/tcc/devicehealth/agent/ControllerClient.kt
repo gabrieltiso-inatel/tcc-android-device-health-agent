@@ -68,8 +68,9 @@ internal class ControllerClient(private val baseUrl: String) {
         return List(actions.length()) { index -> parseAction(actions.getJSONObject(index)) }
     }
 
-    suspend fun createDeviceAction(deviceId: String, type: String, token: String): DeviceAction {
+    suspend fun createDeviceAction(deviceId: String, type: String, token: String, applicationId: String? = null): DeviceAction {
         val body = JSONObject().put("type", type)
+        applicationId?.let { body.put("payload", JSONObject().put("applicationId", it)) }
         val response = request(
             method = "POST",
             path = "/api/devices/$deviceId/actions",
@@ -88,6 +89,7 @@ internal class ControllerClient(private val baseUrl: String) {
     private fun parseAction(action: JSONObject): DeviceAction = DeviceAction(
         id = action.getString("id"),
         type = action.getString("type"),
+        applicationId = action.optJSONObject("payload")?.optString("applicationId")?.ifEmpty { null },
         origin = action.getString("origin"),
         status = action.getString("status"),
         requestedAt = action.getString("requestedAt"),

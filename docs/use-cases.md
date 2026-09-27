@@ -28,7 +28,7 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 
 ### Consultar aplicativos
 
-- coletar nome, pacote, versão e datas dos aplicativos instalados pelo usuário;
+- coletar nome, identificador, versão e datas dos aplicativos instalados pelo usuário;
 - excluir aplicativos identificados pelo Android como sistema;
 - não acessar dados internos de outros aplicativos.
 
@@ -49,9 +49,11 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 
 - melhorar a apresentação e filtragem do histórico;
 - ampliar informações disponíveis sobre aplicativos;
-- permitir ações locais explícitas de gerenciamento;
+- executar `removeApplication` recebido do controlador ou iniciado localmente;
 - acessar arquivos escolhidos pelo usuário através das APIs oficiais;
 - avaliar capacidades privilegiadas em modo Device Owner/Profile Owner.
+
+`removeApplication` é a intenção compartilhada. O agent decide internamente se a execução exige consentimento ou pode usar uma política administrativa validada.
 
 ## Limitações da plataforma
 

@@ -17,6 +17,7 @@ data class DeviceTelemetry(
 data class DeviceAction(
     val id: String,
     val type: String,
+    val applicationId: String? = null,
     val origin: String,
     val status: String,
     val requestedAt: String,

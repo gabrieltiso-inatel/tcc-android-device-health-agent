@@ -57,6 +57,8 @@ usuário toca em uma ação
 - coletores não decidem se algo deve entrar no histórico;
 - apenas ações explícitas usam `ActionExecutor` e geram histórico;
 - sincronizações automáticas atualizam estado sem criar ações;
+- o agent anuncia capabilities do contrato e mapeia internamente as intenções para APIs Android;
+- resultados enviados ao controlador representam o domínio da aplicação e não códigos Android diretamente;
 - toda ação destrutiva exige iniciativa explícita;
 - rede e armazenamento nunca devem bloquear a thread principal;
 - tokens e dados sensíveis não devem aparecer em logs;

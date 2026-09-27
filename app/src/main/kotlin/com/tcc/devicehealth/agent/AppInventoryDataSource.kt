@@ -33,7 +33,7 @@ internal class AppInventoryDataSource(private val packageManager: PackageManager
             return null
         }
         return JSONObject()
-            .put("packageName", application.packageName)
+            .put("applicationId", application.packageName)
             .put("name", packageManager.getApplicationLabel(application).toString().take(255))
             .put("versionName", packageInfo.versionName.orEmpty().take(120))
             .put("versionCode", packageInfo.longVersionCodeValue())

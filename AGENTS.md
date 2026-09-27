@@ -22,6 +22,15 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 
 Esta seção mantém continuidade entre sessões curtas. Consulte-a antes de propor novos trabalhos e atualize-a sempre que uma etapa for concluída, removida ou repriorizada. Registre somente o estado atual e os próximos objetivos; detalhes históricos pertencem aos commits.
 
+Diretrizes permanentes:
+
+- O agent implementa as intenções do contrato compartilhado e mapeia detalhes da plataforma Android internamente.
+- `capabilities` são capacidades anunciadas pelo agent para o controlador; não são permissões Android nem devem expor diretamente a política usada para executar uma ação.
+- Preservar os padrões existentes antes de criar novas abstrações: `ActionExecutor`, `DeviceHealthRepository`, `ControllerClient`, resultados persistidos por `actionId` e snapshots sincronizados pelo repository.
+- Consentimento do usuário, permissões e Device Owner/Profile Owner são estratégias de execução. Não criar uma ação diferente apenas para cada estratégia.
+- Mapear retornos Android para resultados do domínio da aplicação; não expor códigos ou tipos Android diretamente ao controlador.
+- Quando uma decisão de contrato mudar, atualizar este arquivo, o `AGENTS.md` do controlador, o `HANDOFF.md` e os documentos de contexto correspondentes.
+
 Concluído:
 
 - framework unificado de ações com origem `controller` ou `device`;
@@ -31,11 +40,11 @@ Concluído:
 
 Próximo:
 
-- melhorar a apresentação e filtragem do histórico;
+- implementar a execução de `removeApplication` com validação local, consentimento explícito e idempotência;
 
 Depois:
 
-- ampliar informações e ações explícitas sobre aplicativos;
+- melhorar a apresentação e filtragem do histórico;
 - acessar arquivos somente com consentimento do usuário;
 - avaliar capacidades privilegiadas com Device Owner/Profile Owner.
 

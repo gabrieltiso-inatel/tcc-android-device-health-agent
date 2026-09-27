@@ -10,7 +10,7 @@ interface DeviceHealthRepository {
     suspend fun syncStorageSummary(): Result<Unit>
     suspend fun syncAppInventory(): Result<Unit>
     suspend fun checkActions(): Result<Int>
-    suspend fun executeDeviceAction(type: String): Result<Unit>
+    suspend fun executeDeviceAction(type: String, applicationId: String? = null): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
 }
 
@@ -71,10 +71,10 @@ class AndroidDeviceHealthRepository(
         actions.size
     }
 
-    override suspend fun executeDeviceAction(type: String): Result<Unit> = runCatching {
+    override suspend fun executeDeviceAction(type: String, applicationId: String?): Result<Unit> = runCatching {
         val telemetry = readTelemetry()
         val token = requireToken()
-        val action = controllerClient.createDeviceAction(telemetry.deviceId, type, token)
+        val action = controllerClient.createDeviceAction(telemetry.deviceId, type, token, applicationId)
         executeAction(action, token)
     }
 
