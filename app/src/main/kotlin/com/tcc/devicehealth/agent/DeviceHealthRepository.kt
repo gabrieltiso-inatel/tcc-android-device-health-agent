@@ -11,6 +11,8 @@ interface DeviceHealthRepository {
     suspend fun syncAppInventory(): Result<Unit>
     suspend fun checkActions(): Result<Int>
     suspend fun executeDeviceAction(type: String, applicationId: String? = null): Result<Unit>
+    suspend fun getPendingApprovals(): Result<List<PendingApproval>>
+    suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
 }
 
@@ -23,10 +25,16 @@ class AndroidDeviceHealthRepository(
     private val controllerClient = ControllerClient(controllerBaseUrl)
     private val storageDataSource = StorageDataSource()
     private val appInventoryDataSource = AppInventoryDataSource(context.applicationContext.packageManager)
+    private val applicationRemovalDataSource = ApplicationRemovalDataSource(
+        packageManager = context.applicationContext.packageManager,
+        agentPackageName = context.applicationContext.packageName,
+    )
+    private val approvalNotificationDataSource = ApprovalNotificationDataSource(context.applicationContext)
     private val actionExecutor = ActionExecutor(
         sendTelemetry = { sendTelemetry().getOrThrow() },
         collectStorageSummary = storageDataSource::collectSummary,
         collectAppInventory = appInventoryDataSource::collect,
+        prepareApplicationRemoval = applicationRemovalDataSource::prepare,
     )
 
     override suspend fun readTelemetry(): DeviceTelemetry = telemetrySource.read()
@@ -66,6 +74,7 @@ class AndroidDeviceHealthRepository(
     override suspend fun checkActions(): Result<Int> = runCatching {
         val telemetry = readTelemetry()
         val token = requireToken()
+        resendCompletedApprovalResults(token)
         val actions = controllerClient.getPendingActions(telemetry.deviceId, token)
         actions.forEach { action -> executeAction(action, token) }
         actions.size
@@ -76,6 +85,71 @@ class AndroidDeviceHealthRepository(
         val token = requireToken()
         val action = controllerClient.createDeviceAction(telemetry.deviceId, type, token, applicationId)
         executeAction(action, token)
+    }
+
+    override suspend fun getPendingApprovals(): Result<List<PendingApproval>> = runCatching {
+        preferences.getPendingApprovals()
+    }
+
+    override suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit> = runCatching {
+        val approval = preferences.getPendingApprovals().firstOrNull { pending -> pending.actionId == actionId }
+            ?: error("Application removal approval is no longer pending")
+        val result = if (!approved) {
+            StoredActionResult(
+                succeeded = false,
+                status = "cancelled",
+                message = "Application removal cancelled",
+                errorCode = "approval_declined",
+            )
+        } else if (applicationRemovalDataSource.isRemoved(approval)) {
+            StoredActionResult(
+                succeeded = true,
+                status = "completed",
+                message = "Application was already absent",
+                errorCode = "already_absent",
+            )
+        } else {
+            try {
+                applicationRemovalDataSource.validate(approval)
+                if (applicationRemovalDataSource.isRemoved(approval)) {
+                    StoredActionResult(
+                        succeeded = true,
+                        status = "completed",
+                        message = "Application removed",
+                        errorCode = "application_removed",
+                    )
+                } else {
+                    StoredActionResult(
+                        succeeded = false,
+                        status = "failed",
+                        message = "Application removal failed",
+                        errorCode = "execution_failed",
+                    )
+                }
+            } catch (error: ApplicationNotFoundException) {
+                StoredActionResult(false, "Application is no longer installed", "failed", "application_not_found")
+            } catch (error: ApplicationChangedException) {
+                StoredActionResult(false, "Application changed since it was selected", "failed", "application_changed")
+            } catch (error: ApplicationNotAllowedException) {
+                StoredActionResult(false, "Application cannot be removed", "failed", "not_allowed")
+            }
+        }
+        preferences.saveActionResult(actionId, result)
+        controllerClient.sendActionResult(actionId, result, requireToken())
+        preferences.removePendingApproval(actionId)
+        approvalNotificationDataSource.cancel(actionId)
+        syncAppInventory().getOrThrow()
+    }
+
+    private suspend fun resendCompletedApprovalResults(token: String) {
+        preferences.getPendingApprovals().forEach { approval ->
+            val result = preferences.getActionResult(approval.actionId)
+            if (result != null && result.status != "awaiting_approval") {
+                controllerClient.sendActionResult(approval.actionId, result, token)
+                preferences.removePendingApproval(approval.actionId)
+                approvalNotificationDataSource.cancel(approval.actionId)
+            }
+        }
     }
 
     override suspend fun getActionHistory(): Result<List<DeviceAction>> = runCatching {
@@ -90,6 +164,13 @@ class AndroidDeviceHealthRepository(
             if (failure != null) {
                 val storedResult = storedActionResult(execution)
                 if (storedResult != null) {
+                    if (storedResult.status == "awaiting_approval") {
+                        val approval = action.applicationId?.let { applicationId ->
+                            PendingApproval(action.id, applicationId, action.expectedVersionCode)
+                        } ?: throw IllegalStateException("Application removal target is missing")
+                        preferences.savePendingApproval(approval)
+                        approvalNotificationDataSource.notify(approval)
+                    }
                     storedResult.also { preferences.saveActionResult(action.id, it) }
                 } else {
                     throw failure
@@ -97,6 +178,13 @@ class AndroidDeviceHealthRepository(
             } else {
                 val storedResult = storedActionResult(execution)
                     ?: error("Action execution did not produce a result")
+                if (storedResult.status == "awaiting_approval") {
+                    val approval = action.applicationId?.let { applicationId ->
+                        PendingApproval(action.id, applicationId, action.expectedVersionCode)
+                    } ?: error("Application removal target is missing")
+                    preferences.savePendingApproval(approval)
+                    approvalNotificationDataSource.notify(approval)
+                }
                 storedResult.also { preferences.saveActionResult(action.id, it) }
             }
         }

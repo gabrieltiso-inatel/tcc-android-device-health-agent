@@ -45,6 +45,13 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 - telemetria básica, armazenamento e inventário de aplicativos já são sincronizados automaticamente;
 - sincronizações automáticas futuras não devem gerar histórico de ações.
 
+### Remover aplicação
+
+- validar a aplicação e a versão no momento da ação;
+- preservar uma aprovação pendente quando o processo do agent for encerrado;
+- iniciar a confirmação oficial do Android quando o usuário revisar a ação;
+- registrar o resultado e sincronizar o inventário depois da decisão.
+
 ## Planejado
 
 - melhorar a apresentação e filtragem do histórico;

@@ -59,6 +59,7 @@ usuário toca em uma ação
 - sincronizações automáticas atualizam estado sem criar ações;
 - o agent anuncia capabilities do contrato e mapeia internamente as intenções para APIs Android;
 - resultados enviados ao controlador representam o domínio da aplicação e não códigos Android diretamente;
+- aprovações pendentes e resultados finais não enviados devem ser persistidos para retomada automática;
 - toda ação destrutiva exige iniciativa explícita;
 - rede e armazenamento nunca devem bloquear a thread principal;
 - tokens e dados sensíveis não devem aparecer em logs;

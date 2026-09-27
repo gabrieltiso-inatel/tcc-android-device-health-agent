@@ -40,7 +40,7 @@ Concluído:
 
 Próximo:
 
-- implementar a execução de `removeApplication` com validação local, consentimento explícito e idempotência;
+- validar e ajustar a execução de `removeApplication` com validação local, consentimento explícito e idempotência;
 
 Depois:
 

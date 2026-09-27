@@ -19,6 +19,8 @@ data class AgentUiState(
     val isPaired: Boolean = false,
     val pairingCode: String = "",
     val actions: List<DeviceAction> = emptyList(),
+    val pendingApprovals: List<PendingApproval> = emptyList(),
+    val approvalRequest: PendingApproval? = null,
     val isLoading: Boolean = false,
     val message: String? = null,
 )
@@ -51,6 +53,7 @@ class AgentViewModel(
                 mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = "Device paired")
                 sync()
                 loadActionHistory()
+                loadPendingApprovals()
                 startPolling()
             } else {
                 mutableState.value = mutableState.value.copy(
@@ -99,6 +102,27 @@ class AgentViewModel(
         }
     }
 
+    fun requestApplicationRemoval(approval: PendingApproval) {
+        mutableState.value = mutableState.value.copy(approvalRequest = approval, message = null)
+    }
+
+    fun handleApplicationRemovalResult(approved: Boolean) {
+        val approval = mutableState.value.approvalRequest ?: return
+        mutableState.value = mutableState.value.copy(approvalRequest = null, isLoading = true)
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                repository.completeApplicationRemoval(approval.actionId, approved)
+            }
+            loadActionHistory()
+            loadPendingApprovals()
+            mutableState.value = mutableState.value.copy(
+                telemetry = repository.readTelemetry(),
+                isLoading = false,
+                message = result.fold({ "Application action recorded" }, { "Could not finish application action" }),
+            )
+        }
+    }
+
     private fun startPolling() {
         if (pollingJob != null) {
             return
@@ -110,6 +134,7 @@ class AgentViewModel(
                 val processedCount = result.getOrNull() ?: 0
                 if (processedCount > 0) {
                     loadActionHistory()
+                    loadPendingApprovals()
                     mutableState.value = mutableState.value.copy(
                         telemetry = repository.readTelemetry(),
                         message = "$processedCount action(s) completed",
@@ -130,6 +155,7 @@ class AgentViewModel(
             )
             if (isPaired) {
                 loadActionHistory()
+                loadPendingApprovals()
                 sync()
                 startPolling()
             }
@@ -139,6 +165,12 @@ class AgentViewModel(
     private suspend fun loadActionHistory() {
         repository.getActionHistory().getOrNull()?.let { actions ->
             mutableState.value = mutableState.value.copy(actions = actions)
+        }
+    }
+
+    private suspend fun loadPendingApprovals() {
+        repository.getPendingApprovals().getOrNull()?.let { approvals ->
+            mutableState.value = mutableState.value.copy(pendingApprovals = approvals)
         }
     }
 

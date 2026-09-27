@@ -18,6 +18,7 @@ data class DeviceAction(
     val id: String,
     val type: String,
     val applicationId: String? = null,
+    val expectedVersionCode: Long? = null,
     val origin: String,
     val status: String,
     val requestedAt: String,
@@ -28,4 +29,11 @@ data class DeviceAction(
 data class ActionExecution(
     val message: String,
     val resultJson: String? = null,
+    val approvalRequired: Boolean = false,
+)
+
+data class PendingApproval(
+    val actionId: String,
+    val applicationId: String,
+    val expectedVersionCode: Long?,
 )

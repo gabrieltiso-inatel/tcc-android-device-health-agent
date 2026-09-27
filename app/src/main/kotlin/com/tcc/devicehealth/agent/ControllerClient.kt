@@ -68,9 +68,19 @@ internal class ControllerClient(private val baseUrl: String) {
         return List(actions.length()) { index -> parseAction(actions.getJSONObject(index)) }
     }
 
-    suspend fun createDeviceAction(deviceId: String, type: String, token: String, applicationId: String? = null): DeviceAction {
+    suspend fun createDeviceAction(
+        deviceId: String,
+        type: String,
+        token: String,
+        applicationId: String? = null,
+        expectedVersionCode: Long? = null,
+    ): DeviceAction {
         val body = JSONObject().put("type", type)
-        applicationId?.let { body.put("payload", JSONObject().put("applicationId", it)) }
+        applicationId?.let { target ->
+            body.put("payload", JSONObject().put("applicationId", target).apply {
+                expectedVersionCode?.let { versionCode -> put("expectedVersionCode", versionCode) }
+            })
+        }
         val response = request(
             method = "POST",
             path = "/api/devices/$deviceId/actions",
@@ -90,6 +100,9 @@ internal class ControllerClient(private val baseUrl: String) {
         id = action.getString("id"),
         type = action.getString("type"),
         applicationId = action.optJSONObject("payload")?.optString("applicationId")?.ifEmpty { null },
+        expectedVersionCode = action.optJSONObject("payload")?.let { payload ->
+            if (payload.has("expectedVersionCode")) payload.getLong("expectedVersionCode") else null
+        },
         origin = action.getString("origin"),
         status = action.getString("status"),
         requestedAt = action.getString("requestedAt"),
@@ -100,6 +113,7 @@ internal class ControllerClient(private val baseUrl: String) {
     suspend fun sendActionResult(actionId: String, result: StoredActionResult, token: String) {
         val body = JSONObject()
             .put("succeeded", result.succeeded)
+            .put("status", result.status)
             .put("message", result.message)
         result.errorCode?.let { errorCode -> body.put("errorCode", errorCode) }
         result.resultJson?.let { resultJson -> body.put("result", JSONObject(resultJson)) }

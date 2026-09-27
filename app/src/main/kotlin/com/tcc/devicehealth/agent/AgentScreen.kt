@@ -22,6 +22,8 @@ fun AgentScreen(
     onPairingCodeChange: (String) -> Unit,
     onPair: () -> Unit,
     onExecuteAction: (String) -> Unit,
+    onRequestApplicationRemoval: (PendingApproval) -> Unit,
+    onCancelApplicationRemoval: (PendingApproval) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -35,6 +37,7 @@ fun AgentScreen(
             !state.isReady -> Text("Loading...")
             state.isPaired -> {
                 DeviceTelemetryCard(state.telemetry)
+                PendingApprovalsCard(state.pendingApprovals, onRequestApplicationRemoval, onCancelApplicationRemoval)
                 DeviceActionsCard(state.isLoading, onExecuteAction)
                 ActionHistoryCard(state.actions)
             }
@@ -42,6 +45,33 @@ fun AgentScreen(
         }
         state.message?.let { message ->
             Text(message, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun PendingApprovalsCard(
+    approvals: List<PendingApproval>,
+    onRequestApproval: (PendingApproval) -> Unit,
+    onCancelApproval: (PendingApproval) -> Unit,
+) {
+    if (approvals.isEmpty()) {
+        return
+    }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Approval required", style = MaterialTheme.typography.titleMedium)
+            approvals.forEach { approval ->
+                Text("Remove ${approval.applicationId}?")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { onRequestApproval(approval) }) {
+                        Text("Review removal")
+                    }
+                    Button(onClick = { onCancelApproval(approval) }) {
+                        Text("Cancel")
+                    }
+                }
+            }
         }
     }
 }

@@ -38,4 +38,13 @@ class StoredActionResultTest {
         assertEquals(true, result?.succeeded)
         assertEquals(resultJson, result?.resultJson)
     }
+
+    @Test
+    fun approvalRequiredActionIsNotReportedAsCompleted() {
+        val result = storedActionResult(Result.success(ActionExecution("Application removal requires approval", approvalRequired = true)))
+
+        assertEquals(false, result?.succeeded)
+        assertEquals("awaiting_approval", result?.status)
+        assertEquals("approval_required", result?.errorCode)
+    }
 }
