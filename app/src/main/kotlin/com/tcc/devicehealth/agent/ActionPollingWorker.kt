@@ -23,10 +23,9 @@ class ActionPollingWorker(
         if (!repository.isPaired()) {
             return Result.success()
         }
-        return repository.checkActions().fold(
-            onSuccess = { Result.success() },
-            onFailure = { Result.retry() },
-        )
+        val storageResult = repository.syncStorageSummary()
+        val actionResult = repository.checkActions()
+        return if (storageResult.isSuccess && actionResult.isSuccess) Result.success() else Result.retry()
     }
 }
 

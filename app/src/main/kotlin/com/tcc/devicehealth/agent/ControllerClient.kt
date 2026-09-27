@@ -44,6 +44,15 @@ internal class ControllerClient(private val baseUrl: String) {
         )
     }
 
+    suspend fun sendStorageSummary(deviceId: String, resultJson: String, token: String) {
+        request(
+            method = "POST",
+            path = "/api/devices/$deviceId/storage",
+            body = resultJson,
+            token = token,
+        )
+    }
+
     suspend fun getPendingActions(deviceId: String, token: String): List<DeviceAction> {
         val response = request(method = "GET", path = "/api/devices/$deviceId/actions", token = token)
         val actions = JSONObject(response).getJSONArray("actions")

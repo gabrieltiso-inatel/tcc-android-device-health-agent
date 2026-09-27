@@ -68,7 +68,12 @@ class AgentViewModel(
     }
 
     fun sync() {
-        runOperation("Telemetry synchronized") { repository.sendTelemetry() }
+        runOperation("State synchronized") {
+            repository.sendTelemetry().fold(
+                onSuccess = { repository.syncStorageSummary() },
+                onFailure = { Result.failure(it) },
+            )
+        }
     }
 
     fun executeAction(type: String) {

@@ -7,6 +7,7 @@ interface DeviceHealthRepository {
     suspend fun isPaired(): Boolean
     suspend fun pair(code: String): Result<Unit>
     suspend fun sendTelemetry(): Result<Unit>
+    suspend fun syncStorageSummary(): Result<Unit>
     suspend fun checkActions(): Result<Int>
     suspend fun executeDeviceAction(type: String): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
@@ -45,6 +46,13 @@ class AndroidDeviceHealthRepository(
 
     override suspend fun sendTelemetry(): Result<Unit> = runCatching {
         controllerClient.sendTelemetry(readTelemetry(), requireToken())
+    }
+
+    override suspend fun syncStorageSummary(): Result<Unit> = runCatching {
+        val telemetry = readTelemetry()
+        val summary = storageDataSource.collectSummary().resultJson
+            ?: error("Storage summary did not produce a result")
+        controllerClient.sendStorageSummary(telemetry.deviceId, summary, requireToken())
     }
 
     override suspend fun checkActions(): Result<Int> = runCatching {
