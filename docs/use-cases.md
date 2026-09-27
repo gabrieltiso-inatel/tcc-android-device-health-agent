@@ -42,8 +42,7 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 
 ### Sincronizar estado automaticamente
 
-- telemetria básica e armazenamento já são sincronizados automaticamente;
-- aplicativos ainda dependem de ação explícita;
+- telemetria básica, armazenamento e inventário de aplicativos já são sincronizados automaticamente;
 - sincronizações automáticas futuras não devem gerar histórico de ações.
 
 ## Planejado

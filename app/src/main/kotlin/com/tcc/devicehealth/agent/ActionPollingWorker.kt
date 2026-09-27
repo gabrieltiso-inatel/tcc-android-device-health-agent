@@ -24,8 +24,9 @@ class ActionPollingWorker(
             return Result.success()
         }
         val storageResult = repository.syncStorageSummary()
+        val appResult = repository.syncAppInventory()
         val actionResult = repository.checkActions()
-        return if (storageResult.isSuccess && actionResult.isSuccess) Result.success() else Result.retry()
+        return if (storageResult.isSuccess && appResult.isSuccess && actionResult.isSuccess) Result.success() else Result.retry()
     }
 }
 

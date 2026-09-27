@@ -8,6 +8,7 @@ interface DeviceHealthRepository {
     suspend fun pair(code: String): Result<Unit>
     suspend fun sendTelemetry(): Result<Unit>
     suspend fun syncStorageSummary(): Result<Unit>
+    suspend fun syncAppInventory(): Result<Unit>
     suspend fun checkActions(): Result<Int>
     suspend fun executeDeviceAction(type: String): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
@@ -53,6 +54,13 @@ class AndroidDeviceHealthRepository(
         val summary = storageDataSource.collectSummary().resultJson
             ?: error("Storage summary did not produce a result")
         controllerClient.sendStorageSummary(telemetry.deviceId, summary, requireToken())
+    }
+
+    override suspend fun syncAppInventory(): Result<Unit> = runCatching {
+        val telemetry = readTelemetry()
+        val inventory = appInventoryDataSource.collect().resultJson
+            ?: error("App inventory did not produce a result")
+        controllerClient.sendAppInventory(telemetry.deviceId, inventory, requireToken())
     }
 
     override suspend fun checkActions(): Result<Int> = runCatching {

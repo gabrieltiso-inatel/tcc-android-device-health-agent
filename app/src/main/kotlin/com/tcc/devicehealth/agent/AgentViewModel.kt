@@ -70,7 +70,12 @@ class AgentViewModel(
     fun sync() {
         runOperation("State synchronized") {
             repository.sendTelemetry().fold(
-                onSuccess = { repository.syncStorageSummary() },
+                onSuccess = {
+                    repository.syncStorageSummary().fold(
+                        onSuccess = { repository.syncAppInventory() },
+                        onFailure = { Result.failure(it) },
+                    )
+                },
                 onFailure = { Result.failure(it) },
             )
         }

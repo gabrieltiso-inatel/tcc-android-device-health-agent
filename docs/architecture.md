@@ -31,6 +31,8 @@ fonte local coleta estado
 
 O resumo de armazenamento segue o mesmo fluxo de observação automática, em um endpoint próprio, e atualiza somente o snapshot atual no controlador.
 
+O inventário de aplicativos segue o mesmo fluxo em um endpoint próprio e atualiza somente os snapshots atuais no controlador.
+
 ### Ação recebida
 
 ```text
