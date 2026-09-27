@@ -2,6 +2,8 @@
 
 Este documento registra o escopo funcional do aplicativo Android. Atualize o estado dos casos de uso quando uma entrega for concluída ou repriorizada.
 
+O agent deve executar o máximo de ações oficiais de gerenciamento que o dispositivo permitir. Consentimento, notificação, retomada e histórico são partes do caso de uso, não motivos para abandonar a ação.
+
 ## Concluído
 
 ### Cadastrar dispositivo
@@ -56,9 +58,9 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 
 - melhorar a apresentação e filtragem do histórico;
 - ampliar informações disponíveis sobre aplicativos;
-- executar `removeApplication` recebido do controlador ou iniciado localmente;
 - acessar arquivos escolhidos pelo usuário através das APIs oficiais;
-- avaliar capacidades privilegiadas em modo Device Owner/Profile Owner.
+- ampliar ações de gerenciamento de aplicações possíveis com consentimento;
+- avaliar capacidades adicionais em modo Device Owner/Profile Owner.
 
 `removeApplication` é a intenção compartilhada. O agent decide internamente se a execução exige consentimento ou pode usar uma política administrativa validada.
 
@@ -67,5 +69,5 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 - arquivos compartilhados exigem seleção ou consentimento do usuário;
 - inventário de pacotes é informação sensível e requer visibilidade declarada;
 - último uso e tamanho de outros aplicativos podem exigir acessos adicionais;
-- limpeza silenciosa de dados e algumas operações administrativas exigem Device Owner/Profile Owner;
+- limpeza silenciosa de dados e algumas operações administrativas podem exigir Device Owner/Profile Owner;
 - ações destrutivas não devem ser executadas implicitamente.

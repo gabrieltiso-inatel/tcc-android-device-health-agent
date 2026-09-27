@@ -28,6 +28,9 @@ Diretrizes permanentes:
 - `capabilities` são capacidades anunciadas pelo agent para o controlador; não são permissões Android nem devem expor diretamente a política usada para executar uma ação.
 - Preservar os padrões existentes antes de criar novas abstrações: `ActionExecutor`, `DeviceHealthRepository`, `ControllerClient`, resultados persistidos por `actionId` e snapshots sincronizados pelo repository.
 - Consentimento do usuário, permissões e Device Owner/Profile Owner são estratégias de execução. Não criar uma ação diferente apenas para cada estratégia.
+- O objetivo do agent é executar o máximo de ações oficiais de gerenciamento que o dispositivo permitir, não apenas coletar telemetria.
+- Ações que exigem consentimento, notificação ou retomada continuam no escopo; devem ser persistidas, explicadas ao usuário e registradas no histórico.
+- Device Owner/Profile Owner é opcional e experimental; o fluxo principal deve funcionar em telefones familiares comuns sempre que a plataforma permitir.
 - Mapear retornos Android para resultados do domínio da aplicação; não expor códigos ou tipos Android diretamente ao controlador.
 - Quando uma decisão de contrato mudar, atualizar este arquivo, o `AGENTS.md` do controlador, o `HANDOFF.md` e os documentos de contexto correspondentes.
 
@@ -45,8 +48,9 @@ Próximo:
 Depois:
 
 - melhorar a apresentação e filtragem do histórico;
-- acessar arquivos somente com consentimento do usuário;
-- avaliar capacidades privilegiadas com Device Owner/Profile Owner.
+- implementar operações sobre arquivos somente através das APIs oficiais e consentimento necessário;
+- ampliar ações de gerenciamento possíveis no agent comum;
+- avaliar capacidades adicionais com Device Owner/Profile Owner.
 
 ## Context Routing
 
