@@ -28,7 +28,7 @@ internal class DeviceTelemetrySource(
             androidVersion = Build.VERSION.RELEASE,
             apiLevel = Build.VERSION.SDK_INT,
             agentVersion = BuildConfig.VERSION_NAME,
-            capabilities = listOf("collectTelemetry", "collectStorageSummary", "collectAppInventory", "removeApplication"),
+            capabilities = listOf("collectTelemetry", "collectStorageSummary", "collectAppInventory", "collectFileInventory", "removeApplication", "removeFile"),
             batteryPercentage = percentage,
             isCharging = isCharging,
             capturedAt = Instant.now().toString(),

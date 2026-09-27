@@ -20,7 +20,9 @@ data class AgentUiState(
     val pairingCode: String = "",
     val actions: List<DeviceAction> = emptyList(),
     val pendingApprovals: List<PendingApproval> = emptyList(),
+    val pendingFileApprovals: List<PendingFileApproval> = emptyList(),
     val approvalRequest: PendingApproval? = null,
+    val fileApprovalRequest: PendingFileApproval? = null,
     val isLoading: Boolean = false,
     val message: String? = null,
 )
@@ -54,6 +56,7 @@ class AgentViewModel(
                 sync()
                 loadActionHistory()
                 loadPendingApprovals()
+                loadPendingFileApprovals()
                 startPolling()
             } else {
                 mutableState.value = mutableState.value.copy(
@@ -102,8 +105,36 @@ class AgentViewModel(
         }
     }
 
+    fun addFileTreeUri(uri: String) {
+        viewModelScope.launch {
+            repository.addFileTreeUri(uri)
+            mutableState.value = mutableState.value.copy(message = "Folder added. Collect the file inventory to refresh it.")
+        }
+    }
+
     fun requestApplicationRemoval(approval: PendingApproval) {
         mutableState.value = mutableState.value.copy(approvalRequest = approval, message = null)
+    }
+
+    fun requestFileRemoval(approval: PendingFileApproval) {
+        mutableState.value = mutableState.value.copy(fileApprovalRequest = approval, message = null)
+    }
+
+    fun handleFileRemovalResult(approved: Boolean) {
+        val approval = mutableState.value.fileApprovalRequest ?: return
+        mutableState.value = mutableState.value.copy(fileApprovalRequest = null, isLoading = true)
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                repository.completeFileRemoval(approval.actionId, approved)
+            }
+            loadActionHistory()
+            loadPendingFileApprovals()
+            mutableState.value = mutableState.value.copy(
+                telemetry = repository.readTelemetry(),
+                isLoading = false,
+                message = result.fold({ "File action recorded" }, { "Could not finish file action" }),
+            )
+        }
     }
 
     fun handleApplicationRemovalResult(approved: Boolean) {
@@ -135,6 +166,7 @@ class AgentViewModel(
                 if (processedCount > 0) {
                     loadActionHistory()
                     loadPendingApprovals()
+                    loadPendingFileApprovals()
                     mutableState.value = mutableState.value.copy(
                         telemetry = repository.readTelemetry(),
                         message = "$processedCount action(s) completed",
@@ -156,6 +188,7 @@ class AgentViewModel(
             if (isPaired) {
                 loadActionHistory()
                 loadPendingApprovals()
+                loadPendingFileApprovals()
                 sync()
                 startPolling()
             }
@@ -171,6 +204,12 @@ class AgentViewModel(
     private suspend fun loadPendingApprovals() {
         repository.getPendingApprovals().getOrNull()?.let { approvals ->
             mutableState.value = mutableState.value.copy(pendingApprovals = approvals)
+        }
+    }
+
+    private suspend fun loadPendingFileApprovals() {
+        repository.getPendingFileApprovals().getOrNull()?.let { approvals ->
+            mutableState.value = mutableState.value.copy(pendingFileApprovals = approvals)
         }
     }
 

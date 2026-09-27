@@ -40,6 +40,33 @@ internal class ApprovalNotificationDataSource(context: Context) {
         notificationManager.notify(notificationId(approval.actionId), notification)
     }
 
+    fun notifyFile(approval: PendingFileApproval) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            applicationContext.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        notificationManager.createNotificationChannel(
+            NotificationChannel(channelId, "Action approvals", NotificationManager.IMPORTANCE_DEFAULT),
+        )
+        val intent = Intent(applicationContext, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId(approval.actionId),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = android.app.Notification.Builder(applicationContext, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("Approval required")
+            .setContentText("Review removal of ${approval.fileId.take(12)}…")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(notificationId(approval.actionId), notification)
+    }
+
     fun cancel(actionId: String) {
         notificationManager.cancel(notificationId(actionId))
     }

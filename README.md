@@ -44,3 +44,5 @@ A ação `collectStorageSummary` usa APIs públicas do Android e retorna somente
 A ação `collectAppInventory` retorna metadados básicos dos aplicativos instalados pelo usuário. Para cumprir esse caso de uso de gerenciamento, o agente declara visibilidade dos pacotes instalados, mas não acessa dados internos dos aplicativos.
 
 O próprio agente aparece no inventário para manter a leitura completa, mas é marcado como não removível; o controlador não exibe ação de remoção para ele. O app `com.tcc.devicehealth.fixture` é um alvo descartável para testes manuais e pode ser reinstalado com `./scripts/install-test-fixture.sh` após cada execução.
+
+O mesmo script cria uma árvore de arquivos de teste em `Download/device-health-file-fixture`, com arquivos grandes, antigos, aninhados e mutáveis. No agent, escolha essa pasta em `Files > Choose folder`, execute a coleta e confirme o inventário no controller. Para testar a revisão esperada, altere `mutable.txt` antes de solicitar a remoção e confirme que a ação falha com `file_changed`.

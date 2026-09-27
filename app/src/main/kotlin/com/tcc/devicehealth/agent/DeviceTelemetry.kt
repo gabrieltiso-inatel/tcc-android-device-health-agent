@@ -19,6 +19,8 @@ data class DeviceAction(
     val type: String,
     val applicationId: String? = null,
     val expectedVersionCode: Long? = null,
+    val fileId: String? = null,
+    val expectedRevision: String? = null,
     val origin: String,
     val status: String,
     val requestedAt: String,
@@ -36,4 +38,37 @@ data class PendingApproval(
     val actionId: String,
     val applicationId: String,
     val expectedVersionCode: Long?,
+)
+
+data class PendingFileApproval(
+    val actionId: String,
+    val fileId: String,
+    val expectedRevision: String?,
+)
+
+data class FileSource(
+    val sourceId: String,
+    val label: String,
+    val kind: String,
+    val authorization: String,
+    val itemCount: Int? = null,
+)
+
+data class FileItem(
+    val fileId: String,
+    val sourceId: String,
+    val name: String,
+    val kind: String,
+    val mimeType: String? = null,
+    val sizeBytes: Long,
+    val modifiedAt: String? = null,
+    val displayPath: String? = null,
+    val canRemove: Boolean,
+    val revision: String,
+)
+
+data class FileInventory(
+    val capturedAt: String,
+    val sources: List<FileSource>,
+    val files: List<FileItem>,
 )

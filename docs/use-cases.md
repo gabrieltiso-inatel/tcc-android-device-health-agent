@@ -35,6 +35,14 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - excluir aplicativos identificados pelo Android como sistema;
 - não acessar dados internos de outros aplicativos.
 
+### Consultar arquivos autorizados
+
+- coletar metadados de mídia compartilhada quando o usuário autorizar acesso;
+- coletar arquivos e subpastas de diretórios escolhidos pelo usuário;
+- enviar nome, tipo, tamanho, data, fonte, revisão e possibilidade de remoção;
+- não enviar conteúdo, URI ou caminho físico Android;
+- preservar o inventário como resultado da ação `collectFileInventory`.
+
 ### Visualizar histórico de ações
 
 - consultar o histórico mantido pelo controlador;
@@ -54,6 +62,14 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - preservar uma aprovação pendente quando o processo do agent for encerrado;
 - iniciar a confirmação oficial do Android quando o usuário revisar a ação;
 - registrar o resultado e sincronizar o inventário depois da decisão.
+
+### Remover arquivo
+
+- resolver a referência opaca localmente;
+- verificar novamente existência, revisão e possibilidade de remoção;
+- solicitar o consentimento oficial necessário;
+- persistir e enviar o resultado sem repetir o efeito em uma redelivery;
+- nesta etapa, remover somente arquivos de pastas autorizadas pelo usuário; mídia compartilhada permanece somente para leitura.
 
 ## Planejado
 

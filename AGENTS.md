@@ -12,9 +12,10 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 - O primeiro acesso usa um código temporário de pareamento; identidade, token e resultados necessários para idempotência ficam no armazenamento privado do app.
 - Telemetria e consulta de ações funcionam em primeiro plano e por WorkManager em segundo plano.
 - O estado enviado inclui identificação do dispositivo, bateria, versão do Android e capabilities.
+- O agent coleta metadados de arquivos somente de fontes acessíveis e autorizadas pelo usuário, sem enviar conteúdo, URI ou caminho físico ao controlador.
 - O agent coleta resumo agregado de armazenamento e inventário dos aplicativos instalados pelo usuário sem acessar dados internos desses aplicativos.
 - Ações explícitas podem ter origem `controller` ou `device`, usam o mesmo `ActionExecutor` e são registradas no histórico mantido pelo controlador.
-- As ações atuais são `collectTelemetry`, `collectStorageSummary`, `collectAppInventory` e `removeApplication`.
+- As ações atuais são `collectTelemetry`, `collectStorageSummary`, `collectAppInventory`, `collectFileInventory`, `removeApplication` e `removeFile`.
 - Sincronizações automáticas representam estado observado e não devem criar entradas no histórico de ações.
 - Ações destrutivas ou privilegiadas exigem iniciativa explícita e devem respeitar permissões, consentimento e limitações de Device Owner/Profile Owner do Android.
 
@@ -39,6 +40,7 @@ Concluído:
 - framework unificado de ações com origem `controller` ou `device`;
 - histórico compartilhado de ações;
 - telemetria, resumo de armazenamento e inventário de aplicativos;
+- inventário inicial de arquivos compartilhados e pastas autorizadas;
 - pareamento, autenticação, retry, expiração e idempotência.
 
 Próximo:
@@ -48,11 +50,13 @@ Próximo:
 Depois:
 
 - melhorar a apresentação e filtragem do histórico;
-- implementar operações sobre arquivos somente através das APIs oficiais e consentimento necessário;
+- validar e ampliar `removeFile` para outras fontes somente através das APIs oficiais e consentimento necessário;
 - ampliar ações de gerenciamento possíveis no agent comum;
 - avaliar capacidades adicionais com Device Owner/Profile Owner.
 
 No inventário, o próprio agent continua visível para diagnóstico, mas informa `canRemove=false`; a decisão de remoção também é validada novamente no momento da execução.
+
+No inventário de arquivos, `fileId`, `sourceId` e `revision` são referências opacas geradas pelo agent. O agent mantém localmente as referências Android necessárias para uma futura revalidação e remoção.
 
 ## Context Routing
 

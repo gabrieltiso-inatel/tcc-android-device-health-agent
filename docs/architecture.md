@@ -14,6 +14,8 @@ O agent coleta estado local, inicia toda comunicação HTTP, executa ações e a
 - `DeviceTelemetrySource`: informações básicas e bateria;
 - `StorageDataSource`: resumo agregado de armazenamento;
 - `AppInventoryDataSource`: metadados dos aplicativos instalados pelo usuário;
+- `FileInventoryDataSource`: metadados de mídia acessível e pastas autorizadas pelo usuário;
+- `FileRemovalDataSource`: resolução, revalidação e remoção de arquivos em pastas autorizadas;
 - `ActionExecutor`: execução centralizada das ações suportadas;
 - `AgentPreferences`: identidade, token e resultados usados na idempotência;
 - `ActionPollingWorker`: consulta periódica em segundo plano.
@@ -34,6 +36,8 @@ fonte local coleta estado
 O resumo de armazenamento segue o mesmo fluxo de observação automática, em um endpoint próprio, e atualiza somente o snapshot atual no controlador.
 
 O inventário de aplicativos segue o mesmo fluxo em um endpoint próprio e atualiza somente os snapshots atuais no controlador.
+
+O inventário de arquivos é executado por `collectFileInventory`. A fonte usa APIs oficiais para consultar mídia autorizada e diretórios escolhidos pelo usuário; somente metadados e referências opacas são serializados.
 
 ### Ação recebida
 
@@ -60,6 +64,9 @@ usuário toca em uma ação
 - apenas ações explícitas usam `ActionExecutor` e geram histórico;
 - sincronizações automáticas atualizam estado sem criar ações;
 - o agent anuncia capabilities do contrato e mapeia internamente as intenções para APIs Android;
+- URIs, permissões e caminhos físicos de arquivos permanecem no agent e nunca são enviados ao controller;
+- referências de inventário não substituem a validação local antes de uma futura remoção;
+- a remoção de arquivos usa a autorização persistida da pasta e valida novamente a revisão antes de excluir;
 - resultados enviados ao controlador representam o domínio da aplicação e não códigos Android diretamente;
 - aprovações pendentes e resultados finais não enviados devem ser persistidos para retomada automática;
 - toda ação destrutiva exige iniciativa explícita;

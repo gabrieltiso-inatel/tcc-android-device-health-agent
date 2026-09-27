@@ -62,6 +62,15 @@ internal class ControllerClient(private val baseUrl: String) {
         )
     }
 
+    suspend fun sendFileInventory(deviceId: String, resultJson: String, token: String) {
+        request(
+            method = "POST",
+            path = "/api/devices/$deviceId/files",
+            body = resultJson,
+            token = token,
+        )
+    }
+
     suspend fun getPendingActions(deviceId: String, token: String): List<DeviceAction> {
         val response = request(method = "GET", path = "/api/devices/$deviceId/actions", token = token)
         val actions = JSONObject(response).getJSONArray("actions")
@@ -74,11 +83,18 @@ internal class ControllerClient(private val baseUrl: String) {
         token: String,
         applicationId: String? = null,
         expectedVersionCode: Long? = null,
+        fileId: String? = null,
+        expectedRevision: String? = null,
     ): DeviceAction {
         val body = JSONObject().put("type", type)
         applicationId?.let { target ->
             body.put("payload", JSONObject().put("applicationId", target).apply {
                 expectedVersionCode?.let { versionCode -> put("expectedVersionCode", versionCode) }
+            })
+        }
+        fileId?.let { target ->
+            body.put("payload", JSONObject().put("fileId", target).apply {
+                expectedRevision?.let { revision -> put("expectedRevision", revision) }
             })
         }
         val response = request(
@@ -103,6 +119,8 @@ internal class ControllerClient(private val baseUrl: String) {
         expectedVersionCode = action.optJSONObject("payload")?.let { payload ->
             if (payload.has("expectedVersionCode")) payload.getLong("expectedVersionCode") else null
         },
+        fileId = action.optJSONObject("payload")?.optString("fileId")?.ifEmpty { null },
+        expectedRevision = action.optJSONObject("payload")?.optString("expectedRevision")?.ifEmpty { null },
         origin = action.getString("origin"),
         status = action.getString("status"),
         requestedAt = action.getString("requestedAt"),

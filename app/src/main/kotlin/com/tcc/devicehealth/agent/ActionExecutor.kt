@@ -6,7 +6,9 @@ internal class ActionExecutor(
     private val sendTelemetry: suspend () -> Unit,
     private val collectStorageSummary: () -> ActionExecution,
     private val collectAppInventory: () -> ActionExecution,
+    private val collectFileInventory: suspend () -> ActionExecution = { throw UnsupportedActionException() },
     private val prepareApplicationRemoval: (DeviceAction) -> ActionExecution = { throw UnsupportedActionException() },
+    private val prepareFileRemoval: suspend (DeviceAction) -> ActionExecution = { throw UnsupportedActionException() },
 ) {
     suspend fun execute(action: DeviceAction): ActionExecution = when (action.type) {
         "collectTelemetry" -> {
@@ -15,7 +17,9 @@ internal class ActionExecutor(
         }
         "collectStorageSummary" -> collectStorageSummary()
         "collectAppInventory" -> collectAppInventory()
+        "collectFileInventory" -> collectFileInventory()
         "removeApplication" -> prepareApplicationRemoval(action)
+        "removeFile" -> prepareFileRemoval(action)
         else -> throw UnsupportedActionException()
     }
 }
@@ -54,6 +58,21 @@ internal fun storedActionResult(execution: Result<ActionExecution>): StoredActio
             succeeded = false,
             message = "Application cannot be removed",
             errorCode = "not_allowed",
+        )
+        is FileNotFoundException -> StoredActionResult(
+            succeeded = false,
+            message = "File is no longer available",
+            errorCode = "file_not_found",
+        )
+        is FileChangedException -> StoredActionResult(
+            succeeded = false,
+            message = "File changed since it was selected",
+            errorCode = "file_changed",
+        )
+        is FileNotAllowedException -> StoredActionResult(
+            succeeded = false,
+            message = "File cannot be removed",
+            errorCode = "file_not_allowed",
         )
         else -> StoredActionResult(
             succeeded = false,

@@ -43,6 +43,17 @@ class AgentPreferences(
         dataStore.edit { preferences -> preferences[tokenKey] = token }
     }
 
+    suspend fun getFileTreeUris(): List<String> {
+        val value = dataStore.data.first()[fileTreeUrisKey] ?: return emptyList()
+        val uris = JSONArray(value)
+        return List(uris.length()) { index -> uris.getString(index) }
+    }
+
+    suspend fun addFileTreeUri(uri: String) {
+        val uris = (getFileTreeUris() + uri).distinct()
+        dataStore.edit { preferences -> preferences[fileTreeUrisKey] = JSONArray(uris).toString() }
+    }
+
     suspend fun getActionResult(actionId: String): StoredActionResult? {
         val preferences = dataStore.data.first()
         val succeeded = preferences[actionSucceededKey(actionId)] ?: return null
@@ -92,12 +103,47 @@ class AgentPreferences(
         }
     }
 
+    suspend fun getPendingFileApprovals(): List<PendingFileApproval> {
+        val value = dataStore.data.first()[pendingFileApprovalsKey] ?: return emptyList()
+        val approvals = JSONArray(value)
+        return List(approvals.length()) { index ->
+            val approval = approvals.getJSONObject(index)
+            PendingFileApproval(
+                actionId = approval.getString("actionId"),
+                fileId = approval.getString("fileId"),
+                expectedRevision = approval.optString("expectedRevision").ifEmpty { null },
+            )
+        }
+    }
+
+    suspend fun savePendingFileApproval(approval: PendingFileApproval) {
+        val approvals = getPendingFileApprovals().filterNot { it.actionId == approval.actionId } + approval
+        dataStore.edit { preferences -> preferences[pendingFileApprovalsKey] = fileApprovalsJson(approvals) }
+    }
+
+    suspend fun removePendingFileApproval(actionId: String) {
+        val approvals = getPendingFileApprovals().filterNot { it.actionId == actionId }
+        dataStore.edit { preferences ->
+            if (approvals.isEmpty()) preferences.remove(pendingFileApprovalsKey) else preferences[pendingFileApprovalsKey] = fileApprovalsJson(approvals)
+        }
+    }
+
     private fun approvalsJson(approvals: List<PendingApproval>): String = JSONArray().apply {
         approvals.forEach { approval ->
             put(JSONObject().apply {
                 put("actionId", approval.actionId)
                 put("applicationId", approval.applicationId)
                 approval.expectedVersionCode?.let { versionCode -> put("expectedVersionCode", versionCode) }
+            })
+        }
+    }.toString()
+
+    private fun fileApprovalsJson(approvals: List<PendingFileApproval>): String = JSONArray().apply {
+        approvals.forEach { approval ->
+            put(JSONObject().apply {
+                put("actionId", approval.actionId)
+                put("fileId", approval.fileId)
+                approval.expectedRevision?.let { put("expectedRevision", it) }
             })
         }
     }.toString()
@@ -117,5 +163,7 @@ class AgentPreferences(
         fun actionResultKey(actionId: String) = stringPreferencesKey("action_${actionId}_result")
 
         val pendingApprovalsKey = stringPreferencesKey("pending_approvals")
+        val pendingFileApprovalsKey = stringPreferencesKey("pending_file_approvals")
+        val fileTreeUrisKey = stringPreferencesKey("file_tree_uris")
     }
 }
