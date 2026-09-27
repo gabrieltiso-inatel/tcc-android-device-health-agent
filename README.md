@@ -19,6 +19,9 @@ Para testar com telefone físico, substitua o endereço pelo IP LAN do computado
 ./gradlew :app:testDebugUnitTest
 ./gradlew :app:connectedDebugAndroidTest
 ./gradlew :app:lintDebug
+
+# Instala um aplicativo descartável para repetir o fluxo de remoção.
+./scripts/install-test-fixture.sh
 ```
 
 ## Fluxo manual
@@ -39,3 +42,5 @@ Nesta primeira versão, o identificador do dispositivo é um UUID aleatório per
 A ação `collectStorageSummary` usa APIs públicas do Android e retorna somente espaço total, usado e disponível, sem listar arquivos ou solicitar permissões de armazenamento.
 
 A ação `collectAppInventory` retorna metadados básicos dos aplicativos instalados pelo usuário. Para cumprir esse caso de uso de gerenciamento, o agente declara visibilidade dos pacotes instalados, mas não acessa dados internos dos aplicativos.
+
+O próprio agente aparece no inventário para manter a leitura completa, mas é marcado como não removível; o controlador não exibe ação de remoção para ele. O app `com.tcc.devicehealth.fixture` é um alvo descartável para testes manuais e pode ser reinstalado com `./scripts/install-test-fixture.sh` após cada execução.

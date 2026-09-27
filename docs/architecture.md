@@ -18,6 +18,8 @@ O agent coleta estado local, inicia toda comunicação HTTP, executa ações e a
 - `AgentPreferences`: identidade, token e resultados usados na idempotência;
 - `ActionPollingWorker`: consulta periódica em segundo plano.
 
+O inventário mantém o próprio agent visível, mas marca sua referência com `canRemove=false`; essa decisão é apenas uma indicação de interface e não substitui a validação local da ação.
+
 ## Fluxos principais
 
 ### Observação automática

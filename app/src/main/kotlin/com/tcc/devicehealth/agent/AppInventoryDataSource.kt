@@ -7,7 +7,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 
-internal class AppInventoryDataSource(private val packageManager: PackageManager) {
+internal class AppInventoryDataSource(
+    private val packageManager: PackageManager,
+    private val agentPackageName: String,
+) {
     fun collect(): ActionExecution {
         val applications = installedApplications()
             .filterNot { application -> application.flags and ApplicationInfo.FLAG_SYSTEM != 0 }
@@ -35,6 +38,7 @@ internal class AppInventoryDataSource(private val packageManager: PackageManager
         return JSONObject()
             .put("applicationId", application.packageName)
             .put("name", packageManager.getApplicationLabel(application).toString().take(255))
+            .put("canRemove", application.packageName != agentPackageName)
             .put("versionName", packageInfo.versionName.orEmpty().take(120))
             .put("versionCode", packageInfo.longVersionCodeValue())
             .put("installedAt", Instant.ofEpochMilli(packageInfo.firstInstallTime).toString())

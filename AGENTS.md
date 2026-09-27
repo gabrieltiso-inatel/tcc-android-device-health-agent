@@ -14,7 +14,7 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 - O estado enviado inclui identificação do dispositivo, bateria, versão do Android e capabilities.
 - O agent coleta resumo agregado de armazenamento e inventário dos aplicativos instalados pelo usuário sem acessar dados internos desses aplicativos.
 - Ações explícitas podem ter origem `controller` ou `device`, usam o mesmo `ActionExecutor` e são registradas no histórico mantido pelo controlador.
-- As ações atuais são `collectTelemetry`, `collectStorageSummary` e `collectAppInventory`.
+- As ações atuais são `collectTelemetry`, `collectStorageSummary`, `collectAppInventory` e `removeApplication`.
 - Sincronizações automáticas representam estado observado e não devem criar entradas no histórico de ações.
 - Ações destrutivas ou privilegiadas exigem iniciativa explícita e devem respeitar permissões, consentimento e limitações de Device Owner/Profile Owner do Android.
 
@@ -51,6 +51,8 @@ Depois:
 - implementar operações sobre arquivos somente através das APIs oficiais e consentimento necessário;
 - ampliar ações de gerenciamento possíveis no agent comum;
 - avaliar capacidades adicionais com Device Owner/Profile Owner.
+
+No inventário, o próprio agent continua visível para diagnóstico, mas informa `canRemove=false`; a decisão de remoção também é validada novamente no momento da execução.
 
 ## Context Routing
 

@@ -24,7 +24,10 @@ class AndroidDeviceHealthRepository(
     private val telemetrySource = DeviceTelemetrySource(context.applicationContext, preferences)
     private val controllerClient = ControllerClient(controllerBaseUrl)
     private val storageDataSource = StorageDataSource()
-    private val appInventoryDataSource = AppInventoryDataSource(context.applicationContext.packageManager)
+    private val appInventoryDataSource = AppInventoryDataSource(
+        packageManager = context.applicationContext.packageManager,
+        agentPackageName = context.applicationContext.packageName,
+    )
     private val applicationRemovalDataSource = ApplicationRemovalDataSource(
         packageManager = context.applicationContext.packageManager,
         agentPackageName = context.applicationContext.packageName,

@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Device Health Agent"
-include(":app")
+include(":app", ":test-fixture")

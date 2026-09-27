@@ -31,6 +31,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 ### Consultar aplicativos
 
 - coletar nome, identificador, versão e datas dos aplicativos instalados pelo usuário;
+- marcar o próprio agent como não removível, mantendo-o visível no inventário;
 - excluir aplicativos identificados pelo Android como sistema;
 - não acessar dados internos de outros aplicativos.
 
