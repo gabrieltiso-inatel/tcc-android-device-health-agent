@@ -35,7 +35,7 @@ Para testar com telefone físico, substitua o endereço pelo IP LAN do computado
 7. Aguarde o polling do agente processar a ação.
 8. Confirme o resultado no histórico do dispositivo.
 
-Enquanto a tela do agente está aberta, ele consulta ações automaticamente a cada 30 segundos e sincroniza telemetria, armazenamento e inventário de aplicativos. Em segundo plano, o WorkManager faz essas sincronizações periodicamente quando há rede; o Android define o instante exato e não garante execução em tempo real. A interface também permite solicitar atualizações explícitas e mostra o mesmo histórico mantido pelo controlador.
+Enquanto a tela do agente está visível, ele consulta ações imediatamente e depois a cada 3 segundos após a consulta anterior. Falhas aumentam a espera para 6, 12, 24 e até 30 segundos; uma consulta bem-sucedida restaura os 3 segundos. Esse loop não coleta inventários automaticamente. Telemetria, armazenamento e aplicativos são sincronizados na inicialização e após o pareamento. Em segundo plano, o WorkManager mantém seu agendamento de 15 minutos quando há rede; o Android define o instante exato e não garante execução em tempo real. A interface também permite solicitar atualizações explícitas e mostra o mesmo histórico mantido pelo controlador.
 
 Nesta primeira versão, o identificador do dispositivo é um UUID aleatório persistido apenas no armazenamento privado do app. Não são usados identificadores de hardware. O token recebido no pareamento também permanece no DataStore privado do agente.
 

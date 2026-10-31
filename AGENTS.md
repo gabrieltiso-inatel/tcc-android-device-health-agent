@@ -11,6 +11,7 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 - O agent usa Kotlin e Jetpack Compose e inicia toda comunicação HTTP com o controlador.
 - O primeiro acesso usa um código temporário de pareamento; identidade, token e resultados necessários para idempotência ficam no armazenamento privado do app.
 - Telemetria e consulta de ações funcionam em primeiro plano e por WorkManager em segundo plano.
+- A consulta de ações com a Activity visível usa 3 segundos, com espera progressiva até 30 segundos em falhas, separada das coletas; o WorkManager mantém o agendamento de 15 minutos.
 - O estado enviado inclui identificação do dispositivo, bateria, versão do Android e capabilities.
 - O agent coleta metadados de arquivos somente de fontes acessíveis e autorizadas pelo usuário, sem enviar conteúdo, URI ou caminho físico ao controlador.
 - O agent coleta resumo agregado de armazenamento e inventário dos aplicativos instalados pelo usuário sem acessar dados internos desses aplicativos.

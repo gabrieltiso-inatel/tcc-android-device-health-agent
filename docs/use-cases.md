@@ -20,6 +20,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 ### Executar ações
 
 - receber ações do controlador por polling em primeiro plano e WorkManager;
+- consultar imediatamente ao exibir a tela e a cada 3 segundos enquanto visível, com espera progressiva até 30 segundos em falhas;
 - iniciar ações locais com origem `device`;
 - executar `collectTelemetry`, `collectStorageSummary` e `collectAppInventory`;
 - preservar resultados necessários para idempotência.

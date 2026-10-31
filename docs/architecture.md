@@ -41,6 +41,8 @@ O inventário de arquivos é executado por `collectFileInventory`. A fonte usa A
 
 ### Ação recebida
 
+Com a Activity visível, o ViewModel consulta imediatamente e espera 3 segundos entre consultas concluídas. Falhas aplicam espera progressiva de 6, 12, 24 e até 30 segundos; sucesso restaura 3 segundos. Ao ocultar a Activity, o loop é cancelado; ao retornar, uma nova consulta é imediata. Esse loop é separado das sincronizações de inventários. Em segundo plano, o WorkManager mantém o agendamento de 15 minutos sujeito às restrições do Android.
+
 ```text
 polling recebe Action(origin=controller)
 → ActionExecutor executa

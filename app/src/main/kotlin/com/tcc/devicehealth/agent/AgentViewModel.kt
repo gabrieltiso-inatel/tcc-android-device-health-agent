@@ -33,6 +33,17 @@ class AgentViewModel(
     private val mutableState = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = mutableState.asStateFlow()
     private var pollingJob: Job? = null
+    private var isForeground = false
+
+    fun setForeground(isForeground: Boolean) {
+        this.isForeground = isForeground
+        if (isForeground) {
+            startPolling()
+        } else {
+            pollingJob?.cancel()
+            pollingJob = null
+        }
+    }
 
     init {
         initialize()
@@ -155,12 +166,12 @@ class AgentViewModel(
     }
 
     private fun startPolling() {
-        if (pollingJob != null) {
+        if (!isForeground || !state.value.isPaired || pollingJob != null) {
             return
         }
         pollingJob = viewModelScope.launch {
+            val schedule = ForegroundPollingSchedule()
             while (isActive) {
-                delay(30_000)
                 val result = withContext(Dispatchers.IO) { repository.checkActions() }
                 val processedCount = result.getOrNull() ?: 0
                 if (processedCount > 0) {
@@ -169,9 +180,10 @@ class AgentViewModel(
                     loadPendingFileApprovals()
                     mutableState.value = mutableState.value.copy(
                         telemetry = repository.readTelemetry(),
-                        message = "$processedCount action(s) completed",
+                        message = "$processedCount action(s) processed",
                     )
                 }
+                delay(schedule.nextDelayMillis(result.isSuccess))
             }
         }
     }

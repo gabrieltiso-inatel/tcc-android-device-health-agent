@@ -12,6 +12,16 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        viewModel.setForeground(true)
+    }
+
+    override fun onStop() {
+        viewModel.setForeground(false)
+        super.onStop()
+    }
+
     private val viewModel: AgentViewModel by viewModels {
         AgentViewModelFactory(
             AndroidDeviceHealthRepository(applicationContext, BuildConfig.CONTROLLER_BASE_URL),
