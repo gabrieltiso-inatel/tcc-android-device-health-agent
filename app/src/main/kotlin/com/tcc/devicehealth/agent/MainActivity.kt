@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
                 AgentScreen(
                     state = state,
                     onPairingCodeChange = viewModel::updatePairingCode,
+                    onControllerAddressChange = viewModel::updateControllerAddress,
                     onPair = viewModel::pair,
                     onExecuteAction = viewModel::executeAction,
                     onRequestApplicationRemoval = viewModel::requestApplicationRemoval,

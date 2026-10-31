@@ -31,6 +31,7 @@ import java.time.Instant
 fun AgentScreen(
     state: AgentUiState,
     onPairingCodeChange: (String) -> Unit,
+    onControllerAddressChange: (String) -> Unit,
     onPair: () -> Unit,
     onExecuteAction: (String) -> Unit,
     onRequestApplicationRemoval: (PendingApproval) -> Unit,
@@ -63,7 +64,7 @@ fun AgentScreen(
                     else -> FilesTab(state.isLoading, onCollectFileInventory, onSelectFileFolder, onRequestMediaAccess)
                 }
             }
-            else -> PairingCard(state.pairingCode, state.isLoading, onPairingCodeChange, onPair)
+            else -> PairingCard(state.pairingCode, state.controllerAddress, state.isLoading, onPairingCodeChange, onControllerAddressChange, onPair)
         }
         state.message?.let { message ->
             Text(message, style = MaterialTheme.typography.bodyMedium)
@@ -291,14 +292,24 @@ private fun DeviceActionsCard(isLoading: Boolean, onExecuteAction: (String) -> U
 @Composable
 private fun PairingCard(
     code: String,
+    controllerAddress: String,
     isLoading: Boolean,
     onCodeChange: (String) -> Unit,
+    onAddressChange: (String) -> Unit,
     onPair: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Connect to controller", style = MaterialTheme.typography.titleMedium)
             Text("Enter the six-digit code shown by the controller.")
+            OutlinedTextField(
+                value = controllerAddress,
+                onValueChange = onAddressChange,
+                label = { Text("Controller URL") },
+                supportingText = { Text("http://192.168.1.10 or https://controller.example.com") },
+                singleLine = true,
+                enabled = !isLoading,
+            )
             OutlinedTextField(
                 value = code,
                 onValueChange = onCodeChange,

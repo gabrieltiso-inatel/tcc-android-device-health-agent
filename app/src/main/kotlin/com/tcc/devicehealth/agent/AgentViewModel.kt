@@ -18,6 +18,7 @@ data class AgentUiState(
     val isReady: Boolean = false,
     val isPaired: Boolean = false,
     val pairingCode: String = "",
+    val controllerAddress: String = "",
     val actions: List<DeviceAction> = emptyList(),
     val pendingApprovals: List<PendingApproval> = emptyList(),
     val pendingFileApprovals: List<PendingFileApproval> = emptyList(),
@@ -53,6 +54,10 @@ class AgentViewModel(
         mutableState.value = mutableState.value.copy(pairingCode = code.filter(Char::isDigit).take(6))
     }
 
+    fun updateControllerAddress(address: String) {
+        mutableState.value = mutableState.value.copy(controllerAddress = address)
+    }
+
     fun pair() {
         val code = mutableState.value.pairingCode
         if (code.length != 6) {
@@ -61,7 +66,12 @@ class AgentViewModel(
         }
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isLoading = true, message = null)
-            val result = withContext(Dispatchers.IO) { repository.pair(code) }
+            val result = withContext(Dispatchers.IO) {
+                repository.configureController(mutableState.value.controllerAddress).fold(
+                    onSuccess = { repository.pair(code) },
+                    onFailure = { Result.failure(it) },
+                )
+            }
             if (result.isSuccess) {
                 mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = "Device paired")
                 sync()
@@ -72,7 +82,7 @@ class AgentViewModel(
             } else {
                 mutableState.value = mutableState.value.copy(
                     isLoading = false,
-                    message = "Pairing failed. Check the code and try again.",
+                    message = "Pairing failed. Check the controller address and code.",
                 )
             }
         }
@@ -196,6 +206,7 @@ class AgentViewModel(
                 telemetry = telemetry,
                 isReady = true,
                 isPaired = isPaired,
+                controllerAddress = repository.getControllerAddress(),
             )
             if (isPaired) {
                 loadActionHistory()

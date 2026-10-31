@@ -10,9 +10,11 @@ Agente Android do primeiro fluxo ponta a ponta. Ele mostra nome e bateria localm
 
 O endereço padrão do controlador para o emulator é `http://10.0.2.2:3000` e está em `app/build.gradle.kts` como `CONTROLLER_BASE_URL`.
 
-Para testar com telefone físico, substitua o endereço pelo IP LAN do computador e mantenha o servidor controlador acessível nessa rede. Nunca use a configuração HTTP de debug em uma build de produção.
+Na tela de pareamento, informe a URL do controlador. Para telefone físico, use por exemplo `http://192.168.1.10`; a porta HTTP padrão é 3000. URLs HTTPS usam a porta padrão 443, e portas explícitas são preservadas. A URL é salva e reutilizada também pelo WorkManager. Após parear, o endereço permanece associado às credenciais; trocar de controlador exige limpar os dados do app e parear novamente. HTTP continua permitido somente no debug; builds de produção exigem HTTPS. Um controlador remoto ainda requer revisão de segurança antes da exposição pública.
 
 ## Linha de comando
+
+O workflow `CI` executa testes unitários, build debug, lint e build do aplicativo descartável automaticamente em pushes e pull requests, usando Java 17. O resultado aparece na aba **Actions** do GitHub; também é possível executar por **Run workflow**. Não requer secrets nem dispositivo conectado. Os testes instrumentados continuam sendo executados separadamente com emulator ou telefone.
 
 ```sh
 ./gradlew :app:assembleDebug
@@ -23,6 +25,12 @@ Para testar com telefone físico, substitua o endereço pelo IP LAN do computado
 # Instala um aplicativo descartável para repetir o fluxo de remoção.
 ./scripts/install-test-fixture.sh
 ```
+
+## Baixar APK de teste
+
+Na aba **Actions**, abra uma execução bem-sucedida de `CI` e baixe `agent-debug-apk` em **Artifacts** (é necessário estar autenticado no GitHub). Extraia o ZIP e instale `app-debug.apk` no Android, autorizando a instalação dessa origem quando solicitado. Informe a URL do computador e o código de pareamento. No emulator, use `http://10.0.2.2:3000`.
+
+O artifact é uma build debug para avaliação, com HTTP permitido. Não é uma release de produção. A chave debug do runner pode mudar entre builds; uma atualização pode exigir desinstalar a versão anterior, apagando os dados locais e exigindo novo pareamento. Uma distribuição de produção precisará de chave de assinatura persistente e HTTPS. Os artifacts ficam disponíveis por 14 dias.
 
 ## Fluxo manual
 

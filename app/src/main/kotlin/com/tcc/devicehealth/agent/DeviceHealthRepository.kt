@@ -6,6 +6,8 @@ interface DeviceHealthRepository {
     suspend fun readTelemetry(): DeviceTelemetry
     suspend fun isPaired(): Boolean
     suspend fun pair(code: String): Result<Unit>
+    suspend fun getControllerAddress(): String
+    suspend fun configureController(address: String): Result<Unit>
     suspend fun sendTelemetry(): Result<Unit>
     suspend fun syncStorageSummary(): Result<Unit>
     suspend fun syncAppInventory(): Result<Unit>
@@ -27,11 +29,11 @@ interface DeviceHealthRepository {
 
 class AndroidDeviceHealthRepository(
     context: Context,
-    controllerBaseUrl: String,
+    private val controllerBaseUrl: String,
     private val preferences: AgentPreferences = AgentPreferences(context.applicationContext),
 ) : DeviceHealthRepository {
     private val telemetrySource = DeviceTelemetrySource(context.applicationContext, preferences)
-    private val controllerClient = ControllerClient(controllerBaseUrl)
+    private val controllerClient = ControllerClient { getControllerAddress() }
     private val storageDataSource = StorageDataSource()
     private val appInventoryDataSource = AppInventoryDataSource(
         packageManager = context.applicationContext.packageManager,
@@ -56,6 +58,14 @@ class AndroidDeviceHealthRepository(
     override suspend fun readTelemetry(): DeviceTelemetry = telemetrySource.read()
 
     override suspend fun isPaired(): Boolean = preferences.getToken() != null
+
+    override suspend fun getControllerAddress(): String = preferences.getControllerAddress() ?: controllerBaseUrl
+
+    override suspend fun configureController(address: String): Result<Unit> = runCatching {
+        val normalized = normalizeControllerAddress(address)
+        check(!isPaired() || normalized == getControllerAddress())
+        preferences.saveControllerAddress(normalized)
+    }
 
     override suspend fun pair(code: String): Result<Unit> = runCatching {
         val token = try {

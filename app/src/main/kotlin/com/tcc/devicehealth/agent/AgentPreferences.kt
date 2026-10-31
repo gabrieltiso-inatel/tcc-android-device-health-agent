@@ -39,6 +39,12 @@ class AgentPreferences(
 
     suspend fun getToken(): String? = dataStore.data.first()[tokenKey]
 
+    suspend fun getControllerAddress(): String? = dataStore.data.first()[controllerAddressKey]
+
+    suspend fun saveControllerAddress(address: String) {
+        dataStore.edit { preferences -> preferences[controllerAddressKey] = address }
+    }
+
     suspend fun saveToken(token: String) {
         dataStore.edit { preferences -> preferences[tokenKey] = token }
     }
@@ -151,6 +157,7 @@ class AgentPreferences(
     private companion object {
         val deviceIdKey = stringPreferencesKey("device_id")
         val tokenKey = stringPreferencesKey("controller_token")
+        val controllerAddressKey = stringPreferencesKey("controller_address")
 
         fun actionSucceededKey(actionId: String) = booleanPreferencesKey("action_${actionId}_succeeded")
 

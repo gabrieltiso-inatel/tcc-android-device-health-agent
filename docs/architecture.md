@@ -78,6 +78,8 @@ usuário toca em uma ação
 
 ## Limites entre camadas
 
+O endereço do controlador é configurado antes do pareamento e persistido no DataStore. O repository fornece o mesmo endereço ao cliente HTTP no primeiro plano e no WorkManager, com fallback para o endereço de build para instalações anteriores. Credenciais existentes não podem ser enviadas a outro controlador por uma edição de endereço. O cliente não segue redirecionamentos HTTP automaticamente.
+
 - Composables somente renderizam estado e emitem eventos;
 - ViewModel não acessa Android services, banco ou HTTP diretamente;
 - repository coordena, mas delega coleta, transporte e execução;

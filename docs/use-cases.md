@@ -8,6 +8,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 
 ### Cadastrar dispositivo
 
+- informar a URL do controlador antes do pareamento e reutilizá-la nas conexões seguintes;
 - informar código temporário de pareamento;
 - persistir UUID e token no armazenamento privado;
 - retomar comunicação nas utilizações seguintes.

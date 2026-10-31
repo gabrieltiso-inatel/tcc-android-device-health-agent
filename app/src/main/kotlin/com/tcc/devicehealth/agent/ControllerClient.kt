@@ -14,7 +14,7 @@ internal class RetryableControllerException(cause: Throwable? = null) :
 internal class ControllerResponseException(val statusCode: Int) :
     Exception("Controller rejected the request")
 
-internal class ControllerClient(private val baseUrl: String) {
+internal class ControllerClient(private val baseUrl: suspend () -> String) {
     suspend fun pair(code: String, telemetry: DeviceTelemetry): String {
         val body = JSONObject()
             .put("code", code)
@@ -151,7 +151,8 @@ internal class ControllerClient(private val baseUrl: String) {
     ): String = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            connection = URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection
+            connection = URL(baseUrl().trimEnd('/') + path).openConnection() as HttpURLConnection
+            connection.instanceFollowRedirects = false
             connection.requestMethod = method
             connection.connectTimeout = 10_000
             connection.readTimeout = 10_000
