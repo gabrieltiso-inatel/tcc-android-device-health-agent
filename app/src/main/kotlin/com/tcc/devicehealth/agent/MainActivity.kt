@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,7 +31,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         ActionPollingScheduler.schedule(applicationContext)
         setContent {
-            MaterialTheme {
+            DeviceHealthTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 val removalLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.StartActivityForResult(),
@@ -66,9 +65,12 @@ class MainActivity : ComponentActivity() {
                     onPair = viewModel::pair,
                     onExecuteAction = viewModel::executeAction,
                     onRequestApplicationRemoval = viewModel::requestApplicationRemoval,
-                    onCancelApplicationRemoval = { _ -> viewModel.handleApplicationRemovalResult(false) },
+                    onCancelApplicationRemoval = viewModel::cancelApplicationRemoval,
                     onRequestFileRemoval = viewModel::requestFileRemoval,
-                    onCancelFileRemoval = { _ -> viewModel.handleFileRemovalResult(false) },
+                    onCancelFileRemoval = viewModel::cancelFileRemoval,
+                    onDismissFileRemoval = viewModel::dismissFileRemoval,
+                    onRemoveApplication = viewModel::removeApplication,
+                    onRemoveFile = viewModel::removeFile,
                     onConfirmFileRemoval = { viewModel.handleFileRemovalResult(true) },
                     onCollectFileInventory = { viewModel.executeAction("collectFileInventory") },
                     onSelectFileFolder = { folderLauncher.launch(null) },

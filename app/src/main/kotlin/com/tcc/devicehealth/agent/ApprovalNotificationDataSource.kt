@@ -60,7 +60,7 @@ internal class ApprovalNotificationDataSource(context: Context) {
         val notification = android.app.Notification.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setContentTitle("Approval required")
-            .setContentText("Review removal of ${approval.fileId.take(12)}…")
+            .setContentText(approval.name?.let { "Review removal of $it" } ?: "Review file removal in the agent")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

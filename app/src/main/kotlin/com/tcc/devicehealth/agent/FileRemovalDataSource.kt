@@ -21,8 +21,13 @@ internal class FileRemovalDataSource(
         if (!target.canRemove) {
             throw FileNotAllowedException()
         }
+        if (action.expectedRevision != null && target.revision != action.expectedRevision) {
+            throw FileChangedException()
+        }
         return ActionExecution("File removal requires approval", approvalRequired = true)
     }
+
+    suspend fun readName(fileId: String): String? = findFile(fileId)?.name
 
     suspend fun remove(approval: PendingFileApproval) {
         val target = findFile(approval.fileId) ?: throw FileNotFoundException()
@@ -64,6 +69,7 @@ internal class FileRemovalDataSource(
         )
         resolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
             val idIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+            val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
             val mimeIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
             val sizeIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_SIZE)
             val modifiedIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
@@ -81,6 +87,7 @@ internal class FileRemovalDataSource(
                         uri = uri,
                         revision = fileReferenceId("$uri|$size|$modified"),
                         canRemove = cursor.getInt(flagsIndex) and DocumentsContract.Document.FLAG_SUPPORTS_DELETE != 0,
+                        name = cursor.getString(nameIndex).orEmpty(),
                     )
                 }
             }
@@ -93,4 +100,5 @@ private data class FileTargetReference(
     val uri: Uri,
     val revision: String,
     val canRemove: Boolean,
+    val name: String,
 )

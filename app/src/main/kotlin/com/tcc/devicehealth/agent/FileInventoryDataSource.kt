@@ -100,7 +100,7 @@ internal class FileInventoryDataSource(
                         fileId = fileReferenceId(uri.toString()),
                         sourceId = sourceId,
                         name = name,
-                        kind = sourceId.removePrefix("media-"),
+                        kind = fileKind(cursor.getString(mimeIndex)),
                         mimeType = cursor.getString(mimeIndex),
                         sizeBytes = size,
                         modifiedAt = modifiedSeconds.takeIf { it > 0 }?.let { Instant.ofEpochSecond(it).toString() },

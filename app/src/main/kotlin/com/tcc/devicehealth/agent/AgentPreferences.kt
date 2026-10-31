@@ -118,6 +118,7 @@ class AgentPreferences(
                 actionId = approval.getString("actionId"),
                 fileId = approval.getString("fileId"),
                 expectedRevision = approval.optString("expectedRevision").ifEmpty { null },
+                name = approval.optString("name").ifEmpty { null },
             )
         }
     }
@@ -150,6 +151,7 @@ class AgentPreferences(
                 put("actionId", approval.actionId)
                 put("fileId", approval.fileId)
                 approval.expectedRevision?.let { put("expectedRevision", it) }
+                approval.name?.let { put("name", it) }
             })
         }
     }.toString()

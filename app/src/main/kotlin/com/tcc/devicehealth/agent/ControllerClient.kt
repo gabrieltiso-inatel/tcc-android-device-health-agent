@@ -112,6 +112,51 @@ internal class ControllerClient(private val baseUrl: suspend () -> String) {
         return List(actions.length()) { index -> parseAction(actions.getJSONObject(index)) }
     }
 
+    suspend fun getSnapshots(deviceId: String, token: String): DeviceSnapshots {
+        val response = JSONObject(request(method = "GET", path = "/api/devices/$deviceId/state", token = token))
+        return DeviceSnapshots(
+            storage = response.optJSONObject("storage")?.let { summary ->
+                StorageSummary(
+                    summary.getLong("totalBytes"), summary.getLong("usedBytes"),
+                    summary.getLong("availableBytes"), summary.getString("capturedAt"),
+                )
+            },
+            apps = response.optJSONObject("apps")?.let { inventory ->
+                val apps = inventory.getJSONArray("apps")
+                AppInventory(inventory.getString("capturedAt"), List(apps.length()) { index ->
+                    val app = apps.getJSONObject(index)
+                    InstalledApp(
+                        app.getString("applicationId"), app.getString("name"),
+                        app.getBoolean("canRemove"), app.getString("versionName"), app.getLong("versionCode"),
+                    )
+                })
+            },
+            files = response.optJSONObject("files")?.let { inventory ->
+                val sources = inventory.getJSONArray("sources")
+                val files = inventory.getJSONArray("files")
+                FileInventory(
+                    capturedAt = inventory.getString("capturedAt"),
+                    sources = List(sources.length()) { index ->
+                        val source = sources.getJSONObject(index)
+                        FileSource(source.getString("sourceId"), source.getString("label"),
+                            source.getString("kind"), source.getString("authorization"))
+                    },
+                    files = List(files.length()) { index ->
+                        val file = files.getJSONObject(index)
+                        FileItem(
+                            fileId = file.getString("fileId"), sourceId = file.getString("sourceId"),
+                            name = file.getString("name"), kind = file.getString("kind"),
+                            sizeBytes = file.getLong("sizeBytes"),
+                            modifiedAt = file.optString("modifiedAt").ifEmpty { null },
+                            displayPath = file.optString("displayPath").ifEmpty { null },
+                            canRemove = file.getBoolean("canRemove"), revision = file.getString("revision"),
+                        )
+                    },
+                )
+            },
+        )
+    }
+
     private fun parseAction(action: JSONObject): DeviceAction = DeviceAction(
         id = action.getString("id"),
         type = action.getString("type"),

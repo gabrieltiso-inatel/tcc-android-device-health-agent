@@ -19,6 +19,7 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 - Ações explícitas podem ter origem `controller` ou `device`, usam o mesmo `ActionExecutor` e são registradas no histórico mantido pelo controlador.
 - As ações atuais são `collectTelemetry`, `collectStorageSummary`, `collectAppInventory`, `collectFileInventory`, `removeApplication` e `removeFile`.
 - Sincronizações automáticas representam estado observado e não devem criar entradas no histórico de ações.
+- A UI mostra armazenamento, apps e arquivos a partir de `GET /api/devices/:deviceId/state`, autenticado por dispositivo; a atualização da visualização usa `SyncIntervals.screenRefreshMillis` sem criar ações. Remoções locais preservam revisão/versão esperada e o mesmo fluxo de aprovação. Nomes de arquivos em aprovações ficam persistidos apenas como informação de apresentação.
 - Ações destrutivas ou privilegiadas exigem iniciativa explícita e devem respeitar permissões, consentimento e limitações de Device Owner/Profile Owner do Android.
 
 ## Current Direction

@@ -34,6 +34,8 @@ O artifact é uma build debug para avaliação, com HTTP permitido. Não é uma 
 
 ## Fluxo manual
 
+Após parear, as abas **Overview**, **Apps**, **Files**, **Pending** e **History** permitem consultar o estado e iniciar as mesmas atualizações e remoções disponíveis no controller. Apps, arquivos e histórico têm paginação; inventários têm pesquisa e o histórico tem filtro de estado. A leitura dos snapshots do controller ocorre a cada 15 segundos (`SyncIntervals.screenRefreshMillis`) e não solicita nova coleta. Dados antigos permanecem visíveis com aviso quando a conexão falha. Para uma nova leitura no Android, use **Update**. Remoções locais continuam exigindo aprovação; **Back** fecha a revisão de arquivo, e **Decline** recusa a ação selecionada.
+
 1. Inicie o controlador em `http://localhost:3000`.
 2. No dashboard, clique em **Add device** para gerar um código temporário.
 3. Abra o agente, informe o código de seis dígitos e toque em **Connect**.

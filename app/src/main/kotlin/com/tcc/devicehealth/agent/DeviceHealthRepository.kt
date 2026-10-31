@@ -19,12 +19,14 @@ interface DeviceHealthRepository {
         applicationId: String? = null,
         fileId: String? = null,
         expectedRevision: String? = null,
+        expectedVersionCode: Long? = null,
     ): Result<Unit>
     suspend fun getPendingApprovals(): Result<List<PendingApproval>>
     suspend fun getPendingFileApprovals(): Result<List<PendingFileApproval>>
     suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit>
     suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
+    suspend fun getSnapshots(): Result<DeviceSnapshots>
 }
 
 class AndroidDeviceHealthRepository(
@@ -117,10 +119,10 @@ class AndroidDeviceHealthRepository(
         actions.size
     }
 
-    override suspend fun executeDeviceAction(type: String, applicationId: String?, fileId: String?, expectedRevision: String?): Result<Unit> = runCatching {
+    override suspend fun executeDeviceAction(type: String, applicationId: String?, fileId: String?, expectedRevision: String?, expectedVersionCode: Long?): Result<Unit> = runCatching {
         val telemetry = readTelemetry()
         val token = requireToken()
-        val action = controllerClient.createDeviceAction(telemetry.deviceId, type, token, applicationId, null, fileId, expectedRevision)
+        val action = controllerClient.createDeviceAction(telemetry.deviceId, type, token, applicationId, expectedVersionCode, fileId, expectedRevision)
         executeAction(action, token)
     }
 
@@ -135,7 +137,8 @@ class AndroidDeviceHealthRepository(
     override suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit> = runCatching {
         val approval = preferences.getPendingApprovals().firstOrNull { pending -> pending.actionId == actionId }
             ?: error("Application removal approval is no longer pending")
-        val result = if (!approved) {
+        val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
+        val result = previous ?: if (!approved) {
             StoredActionResult(
                 succeeded = false,
                 status = "cancelled",
@@ -185,7 +188,8 @@ class AndroidDeviceHealthRepository(
     override suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<Unit> = runCatching {
         val approval = preferences.getPendingFileApprovals().firstOrNull { pending -> pending.actionId == actionId }
             ?: error("File removal approval is no longer pending")
-        val result = if (!approved) {
+        val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
+        val result = previous ?: if (!approved) {
             StoredActionResult(false, "File removal cancelled", "cancelled", "approval_declined")
         } else {
             try {
@@ -230,6 +234,10 @@ class AndroidDeviceHealthRepository(
         controllerClient.getActionHistory(telemetry.deviceId, requireToken())
     }
 
+    override suspend fun getSnapshots(): Result<DeviceSnapshots> = runCatching {
+        controllerClient.getSnapshots(preferences.getDeviceId(), requireToken())
+    }
+
     private suspend fun executeAction(action: DeviceAction, token: String) {
         val result = preferences.getActionResult(action.id) ?: run {
             val execution = runCatching { actionExecutor.execute(action) }
@@ -266,7 +274,7 @@ class AndroidDeviceHealthRepository(
             }
             "removeFile" -> {
                 val approval = action.fileId?.let { fileId ->
-                    PendingFileApproval(action.id, fileId, action.expectedRevision)
+                    PendingFileApproval(action.id, fileId, action.expectedRevision, fileRemovalDataSource.readName(fileId))
                 } ?: throw IllegalStateException("File removal target is missing")
                 preferences.savePendingFileApproval(approval)
                 approvalNotificationDataSource.notifyFile(approval)

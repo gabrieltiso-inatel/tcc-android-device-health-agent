@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -20,6 +21,8 @@ data class AgentUiState(
     val isPaired: Boolean = false,
     val pairingCode: String = "",
     val controllerAddress: String = "",
+    val snapshots: DeviceSnapshots = DeviceSnapshots(),
+    val snapshotError: String? = null,
     val actions: List<DeviceAction> = emptyList(),
     val pendingApprovals: List<PendingApproval> = emptyList(),
     val pendingFileApprovals: List<PendingFileApproval> = emptyList(),
@@ -31,6 +34,7 @@ data class AgentUiState(
 
 class AgentViewModel(
     private val repository: DeviceHealthRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = mutableState.asStateFlow()
@@ -70,7 +74,7 @@ class AgentViewModel(
         }
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isLoading = true, message = null)
-            val result = withContext(Dispatchers.IO) {
+            val result = withContext(ioDispatcher) {
                 repository.configureController(mutableState.value.controllerAddress).fold(
                     onSuccess = { repository.pair(code) },
                     onFailure = { Result.failure(it) },
@@ -91,16 +95,25 @@ class AgentViewModel(
         }
     }
 
-    fun refresh() {
-        viewModelScope.launch {
-            mutableState.value = mutableState.value.copy(telemetry = repository.readTelemetry())
-        }
+    fun executeAction(type: String) {
+        executeAction(type, null, null)
     }
 
-    fun executeAction(type: String) {
+    fun removeApplication(app: InstalledApp) {
+        executeAction("removeApplication", app, null)
+    }
+
+    fun removeFile(file: FileItem) {
+        executeAction("removeFile", null, file)
+    }
+
+    private fun executeAction(type: String, app: InstalledApp?, file: FileItem?) {
+        if (state.value.isLoading) return
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isLoading = true, message = null)
-            val result = withContext(Dispatchers.IO) { repository.executeDeviceAction(type) }
+            val result = withContext(ioDispatcher) {
+                repository.executeDeviceAction(type, app?.applicationId, file?.fileId, file?.revision, app?.versionCode)
+            }
             val actions = if (result.isSuccess) {
                 repository.getActionHistory().getOrDefault(mutableState.value.actions)
             } else {
@@ -110,15 +123,21 @@ class AgentViewModel(
                 telemetry = repository.readTelemetry(),
                 actions = actions,
                 isLoading = false,
-                message = result.fold({ "Action completed" }, { "Action failed. Try again." }),
+                message = result.fold({ "Action processed. Check pending approvals or history." }, { "Could not finish the request. Check history before trying again." }),
             )
+            loadPendingApprovals()
+            loadPendingFileApprovals()
+            loadSnapshots()
         }
     }
 
     fun addFileTreeUri(uri: String) {
         viewModelScope.launch {
-            repository.addFileTreeUri(uri)
-            mutableState.value = mutableState.value.copy(message = "Folder added. Collect the file inventory to refresh it.")
+            val result = repository.addFileTreeUri(uri)
+            mutableState.value = mutableState.value.copy(message = result.fold(
+                { "Folder added. Update files to include it." },
+                { "Could not add the folder. Try again." },
+            ))
         }
     }
 
@@ -127,18 +146,37 @@ class AgentViewModel(
     }
 
     fun requestFileRemoval(approval: PendingFileApproval) {
-        mutableState.value = mutableState.value.copy(fileApprovalRequest = approval, message = null)
+        val name = approval.name ?: state.value.snapshots.files?.files?.find { it.fileId == approval.fileId }?.name
+        mutableState.value = mutableState.value.copy(fileApprovalRequest = approval.copy(name = name), message = null)
+    }
+
+    fun dismissFileRemoval() {
+        mutableState.value = mutableState.value.copy(fileApprovalRequest = null)
+    }
+
+    fun cancelFileRemoval(approval: PendingFileApproval) {
+        completeFileRemoval(approval, false)
+    }
+
+    fun cancelApplicationRemoval(approval: PendingApproval) {
+        completeApplicationRemoval(approval, false)
     }
 
     fun handleFileRemovalResult(approved: Boolean) {
         val approval = mutableState.value.fileApprovalRequest ?: return
+        completeFileRemoval(approval, approved)
+    }
+
+    private fun completeFileRemoval(approval: PendingFileApproval, approved: Boolean) {
+        if (state.value.isLoading) return
         mutableState.value = mutableState.value.copy(fileApprovalRequest = null, isLoading = true)
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
+            val result = withContext(ioDispatcher) {
                 repository.completeFileRemoval(approval.actionId, approved)
             }
             loadActionHistory()
             loadPendingFileApprovals()
+            loadSnapshots()
             mutableState.value = mutableState.value.copy(
                 telemetry = repository.readTelemetry(),
                 isLoading = false,
@@ -149,13 +187,19 @@ class AgentViewModel(
 
     fun handleApplicationRemovalResult(approved: Boolean) {
         val approval = mutableState.value.approvalRequest ?: return
+        completeApplicationRemoval(approval, approved)
+    }
+
+    private fun completeApplicationRemoval(approval: PendingApproval, approved: Boolean) {
+        if (state.value.isLoading) return
         mutableState.value = mutableState.value.copy(approvalRequest = null, isLoading = true)
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
+            val result = withContext(ioDispatcher) {
                 repository.completeApplicationRemoval(approval.actionId, approved)
             }
             loadActionHistory()
             loadPendingApprovals()
+            loadSnapshots()
             mutableState.value = mutableState.value.copy(
                 telemetry = repository.readTelemetry(),
                 isLoading = false,
@@ -172,12 +216,13 @@ class AgentViewModel(
         pollingJob = viewModelScope.launch {
             val schedule = ForegroundPollingSchedule()
             while (isActive) {
-                val result = withContext(Dispatchers.IO) { repository.checkActions() }
+                val result = withContext(ioDispatcher) { repository.checkActions() }
                 val processedCount = result.getOrNull() ?: 0
                 if (processedCount > 0) {
                     loadActionHistory()
                     loadPendingApprovals()
                     loadPendingFileApprovals()
+                    loadSnapshots()
                     mutableState.value = mutableState.value.copy(
                         telemetry = repository.readTelemetry(),
                         message = "$processedCount action(s) processed",
@@ -190,7 +235,7 @@ class AgentViewModel(
 
     private fun startAutomaticSync() {
         if (!isForeground || !state.value.isPaired || synchronizationJob != null) return
-        synchronizationJob = viewModelScope.launch(Dispatchers.IO) {
+        synchronizationJob = viewModelScope.launch(ioDispatcher) {
             coroutineScope {
                 launch {
                     syncPeriodically(SyncIntervals.telemetryMillis, sync = {
@@ -204,6 +249,16 @@ class AgentViewModel(
                 }
                 launch { syncPeriodically(SyncIntervals.storageMillis, repository::syncStorageSummary) }
                 launch { syncPeriodically(SyncIntervals.appInventoryMillis, repository::syncAppInventory) }
+                launch {
+                    syncPeriodically(SyncIntervals.screenRefreshMillis, sync = {
+                        withContext(Dispatchers.Main) {
+                            loadActionHistory()
+                            loadPendingApprovals()
+                            loadPendingFileApprovals()
+                            loadSnapshots()
+                        }
+                    })
+                }
             }
         }
     }
@@ -231,6 +286,15 @@ class AgentViewModel(
         repository.getActionHistory().getOrNull()?.let { actions ->
             mutableState.value = mutableState.value.copy(actions = actions)
         }
+    }
+
+    private suspend fun loadSnapshots(): Result<Unit> {
+        val result = repository.getSnapshots()
+        mutableState.value = mutableState.value.copy(
+            snapshots = result.getOrDefault(state.value.snapshots),
+            snapshotError = if (result.isFailure) "Could not refresh saved readings. Showing the last available data." else null,
+        )
+        return result.map { Unit }
     }
 
     private suspend fun loadPendingApprovals() {

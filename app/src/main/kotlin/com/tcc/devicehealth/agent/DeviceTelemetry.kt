@@ -44,6 +44,30 @@ data class PendingFileApproval(
     val actionId: String,
     val fileId: String,
     val expectedRevision: String?,
+    val name: String? = null,
+)
+
+data class StorageSummary(
+    val totalBytes: Long,
+    val usedBytes: Long,
+    val availableBytes: Long,
+    val capturedAt: String,
+)
+
+data class InstalledApp(
+    val applicationId: String,
+    val name: String,
+    val canRemove: Boolean,
+    val versionName: String,
+    val versionCode: Long,
+)
+
+data class AppInventory(val capturedAt: String, val apps: List<InstalledApp>)
+
+data class DeviceSnapshots(
+    val storage: StorageSummary? = null,
+    val apps: AppInventory? = null,
+    val files: FileInventory? = null,
 )
 
 data class FileSource(

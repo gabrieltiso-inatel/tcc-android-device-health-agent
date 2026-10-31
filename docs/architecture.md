@@ -6,6 +6,10 @@ O agent coleta estado local, inicia toda comunicação HTTP, executa ações e a
 
 ## Componentes atuais
 
+O agent apresenta os snapshots mantidos pelo controller através de `GET /api/devices/:deviceId/state`, autenticado pelo token do próprio dispositivo. `ControllerClient` desserializa os dados e o repository os fornece ao ViewModel. A visualização é atualizada a cada `SyncIntervals.screenRefreshMillis` (15 segundos), após ações e ao retomar a tela; essa leitura não executa coletores nem cria histórico. Falhas preservam os dados já apresentados e exibem um aviso. Listas de apps, arquivos e histórico usam páginas de 20 entradas; a paginação é apenas de apresentação.
+
+`DeviceHealthTheme` define as cores; componentes visuais compartilhados e formatação ficam separados da execução. As abas são Overview, Apps, Files, Pending e History. Solicitações de remoção locais usam `executeDeviceAction`, incluindo versão/revisão esperada, com as mesmas validações das solicitações remotas. Fechar a revisão de um arquivo preserva a pendência; recusar atua explicitamente no `actionId` selecionado. O nome de arquivo resolvido localmente é persistido na aprovação para ser reconhecível após reiniciar o processo; o identificador opaco permanece o alvo da execução.
+
 - `MainActivity`: composição da aplicação e conexão da UI ao ViewModel;
 - `AgentScreen`: renderização e interação da UI Compose;
 - `AgentViewModel`: estado imutável da interface e coordenação de eventos;

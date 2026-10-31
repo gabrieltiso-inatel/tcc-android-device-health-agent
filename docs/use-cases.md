@@ -29,6 +29,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 ### Consultar armazenamento
 
 - coletar espaço total, usado e disponível sem acessar arquivos.
+- apresentar o snapshot compartilhado com o controller e oferecer atualização explícita.
 
 ### Consultar aplicativos
 
@@ -36,6 +37,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - marcar o próprio agent como não removível, mantendo-o visível no inventário;
 - excluir aplicativos identificados pelo Android como sistema;
 - não acessar dados internos de outros aplicativos.
+- apresentar apps, pesquisar nomes e iniciar remoção local com a versão observada.
 
 ### Consultar arquivos autorizados
 
@@ -44,12 +46,15 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - enviar nome, tipo, tamanho, data, fonte, revisão e possibilidade de remoção;
 - não enviar conteúdo, URI ou caminho físico Android;
 - preservar o inventário como resultado da ação `collectFileInventory`.
+- apresentar arquivos, pesquisar nomes e iniciar remoção local com a revisão observada;
+- manter nomes legíveis nas aprovações e notificações, sem usar nomes como autoridade de execução.
 
 ### Visualizar histórico de ações
 
 - consultar o histórico mantido pelo controlador;
 - mostrar origem, estado, instante e resultado;
 - compartilhar a mesma fonte de verdade com a interface web.
+- filtrar por estado e navegar em páginas de 20 entradas.
 
 ## Parcial
 
