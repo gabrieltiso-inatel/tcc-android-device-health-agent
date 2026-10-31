@@ -23,10 +23,15 @@ class ActionPollingWorker(
         if (!repository.isPaired()) {
             return Result.success()
         }
+        val telemetryResult = repository.sendTelemetry()
         val storageResult = repository.syncStorageSummary()
         val appResult = repository.syncAppInventory()
         val actionResult = repository.checkActions()
-        return if (storageResult.isSuccess && appResult.isSuccess && actionResult.isSuccess) Result.success() else Result.retry()
+        return if (telemetryResult.isSuccess && storageResult.isSuccess && appResult.isSuccess && actionResult.isSuccess) {
+            Result.success()
+        } else {
+            Result.retry()
+        }
     }
 }
 
@@ -37,14 +42,14 @@ object ActionPollingScheduler {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-        val request = PeriodicWorkRequestBuilder<ActionPollingWorker>(15, TimeUnit.MINUTES)
+        val request = PeriodicWorkRequestBuilder<ActionPollingWorker>(SyncIntervals.backgroundMinutes, TimeUnit.MINUTES)
             .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, SyncIntervals.backgroundBackoffSeconds, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             workName,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             request,
         )
     }

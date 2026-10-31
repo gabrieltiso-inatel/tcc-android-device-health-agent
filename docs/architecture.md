@@ -26,6 +26,8 @@ O inventário mantém o próprio agent visível, mas marca sua referência com `
 
 ### Observação automática
 
+`SyncIntervals` centraliza os intervalos de consulta de ações, sincronizações e WorkManager. Com a Activity visível, coroutines independentes sincronizam telemetria (30 segundos), armazenamento (1 minuto) e apps (5 minutos), imediatamente no início e com espera após cada tentativa. O ViewModel controla o ciclo de vida; o repository continua responsável pelas operações de dados. Cada loop aguarda sua própria tentativa e repete falhas no próximo intervalo. A consulta de ações não aguarda esses loops. Ao ocultar a Activity, as coroutines são canceladas; arquivos não são percorridos periodicamente. WorkManager sincroniza também telemetria em segundo plano e usa atualização do trabalho periódico existente para aplicar mudanças de configuração.
+
 ```text
 fonte local coleta estado
 → repository envia ao controlador

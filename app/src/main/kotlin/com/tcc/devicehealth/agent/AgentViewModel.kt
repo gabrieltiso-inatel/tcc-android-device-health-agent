@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ class AgentViewModel(
     private val mutableState = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = mutableState.asStateFlow()
     private var pollingJob: Job? = null
+    private var synchronizationJob: Job? = null
     private var isForeground = false
 
     fun setForeground(isForeground: Boolean) {
@@ -43,6 +45,8 @@ class AgentViewModel(
         } else {
             pollingJob?.cancel()
             pollingJob = null
+            synchronizationJob?.cancel()
+            synchronizationJob = null
         }
     }
 
@@ -74,7 +78,6 @@ class AgentViewModel(
             }
             if (result.isSuccess) {
                 mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = "Device paired")
-                sync()
                 loadActionHistory()
                 loadPendingApprovals()
                 loadPendingFileApprovals()
@@ -91,20 +94,6 @@ class AgentViewModel(
     fun refresh() {
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(telemetry = repository.readTelemetry())
-        }
-    }
-
-    fun sync() {
-        runOperation("State synchronized") {
-            repository.sendTelemetry().fold(
-                onSuccess = {
-                    repository.syncStorageSummary().fold(
-                        onSuccess = { repository.syncAppInventory() },
-                        onFailure = { Result.failure(it) },
-                    )
-                },
-                onFailure = { Result.failure(it) },
-            )
         }
     }
 
@@ -176,6 +165,7 @@ class AgentViewModel(
     }
 
     private fun startPolling() {
+        startAutomaticSync()
         if (!isForeground || !state.value.isPaired || pollingJob != null) {
             return
         }
@@ -198,6 +188,26 @@ class AgentViewModel(
         }
     }
 
+    private fun startAutomaticSync() {
+        if (!isForeground || !state.value.isPaired || synchronizationJob != null) return
+        synchronizationJob = viewModelScope.launch(Dispatchers.IO) {
+            coroutineScope {
+                launch {
+                    syncPeriodically(SyncIntervals.telemetryMillis, sync = {
+                        val result = repository.sendTelemetry()
+                        val telemetry = repository.readTelemetry()
+                        withContext(Dispatchers.Main) {
+                            mutableState.value = mutableState.value.copy(telemetry = telemetry)
+                        }
+                        result
+                    })
+                }
+                launch { syncPeriodically(SyncIntervals.storageMillis, repository::syncStorageSummary) }
+                launch { syncPeriodically(SyncIntervals.appInventoryMillis, repository::syncAppInventory) }
+            }
+        }
+    }
+
     private fun initialize() {
         viewModelScope.launch {
             val telemetry = repository.readTelemetry()
@@ -212,7 +222,6 @@ class AgentViewModel(
                 loadActionHistory()
                 loadPendingApprovals()
                 loadPendingFileApprovals()
-                sync()
                 startPolling()
             }
         }
@@ -236,21 +245,6 @@ class AgentViewModel(
         }
     }
 
-    private fun runOperation(successMessage: String, operation: suspend () -> Result<Unit>) {
-        runOperation({ successMessage }, operation)
-    }
-
-    private fun <T> runOperation(successMessage: (T) -> String, operation: suspend () -> Result<T>) {
-        viewModelScope.launch {
-            mutableState.value = mutableState.value.copy(isLoading = true, message = null)
-            val result = withContext(Dispatchers.IO) { operation() }
-            mutableState.value = mutableState.value.copy(
-                telemetry = repository.readTelemetry(),
-                isLoading = false,
-                message = result.fold(successMessage) { "Operation failed. Try again." },
-            )
-        }
-    }
 }
 
 class AgentViewModelFactory(

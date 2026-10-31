@@ -56,6 +56,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 ### Sincronizar estado automaticamente
 
 - telemetria básica, armazenamento e inventário de aplicativos já são sincronizados automaticamente;
+- com a tela visível, sincronizar imediatamente e repetir telemetria a cada 30 segundos, armazenamento a cada 1 minuto e apps a cada 5 minutos; intervalos configuráveis em `SyncIntervals.kt`;
 - sincronizações automáticas futuras não devem gerar histórico de ações.
 
 ### Remover aplicação

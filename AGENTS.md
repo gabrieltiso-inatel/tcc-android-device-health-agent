@@ -12,6 +12,7 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 - O primeiro acesso usa um código temporário de pareamento; identidade, token e resultados necessários para idempotência ficam no armazenamento privado do app.
 - Telemetria e consulta de ações funcionam em primeiro plano e por WorkManager em segundo plano.
 - A consulta de ações com a Activity visível usa 3 segundos, com espera progressiva até 30 segundos em falhas, separada das coletas; o WorkManager mantém o agendamento de 15 minutos.
+- `SyncIntervals.kt` centraliza os tempos; sincronizações automáticas visíveis usam coroutines independentes para telemetria (30 segundos), armazenamento (1 minuto) e apps (5 minutos), sem criar ações. WorkManager também envia telemetria. Arquivos mantêm coleta explícita.
 - O estado enviado inclui identificação do dispositivo, bateria, versão do Android e capabilities.
 - O agent coleta metadados de arquivos somente de fontes acessíveis e autorizadas pelo usuário, sem enviar conteúdo, URI ou caminho físico ao controlador.
 - O agent coleta resumo agregado de armazenamento e inventário dos aplicativos instalados pelo usuário sem acessar dados internos desses aplicativos.
