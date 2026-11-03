@@ -7,6 +7,18 @@ import org.junit.Test
 
 class AgentPreferencesTest {
     @Test
+    fun persistsMediaApprovalForProcessRestart() = runBlocking {
+        val preferences = AgentPreferences(ApplicationProvider.getApplicationContext<android.content.Context>())
+        val approval = PendingFileApproval("media-test", "opaque-id", "revision", "Photo.png",
+            "content://media/external/images/media/1", platformRequestStarted = true)
+
+        preferences.savePendingFileApproval(approval)
+
+        assertEquals(approval, preferences.getPendingFileApprovals().first { it.actionId == approval.actionId })
+        preferences.removePendingFileApproval(approval.actionId)
+    }
+
+    @Test
     fun returnsThePersistedDeviceIdentifier() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val preferences = AgentPreferences(context)

@@ -19,7 +19,8 @@ O agent apresenta os snapshots mantidos pelo controller através de `GET /api/de
 - `StorageDataSource`: resumo agregado de armazenamento;
 - `AppInventoryDataSource`: metadados dos aplicativos instalados pelo usuário;
 - `FileInventoryDataSource`: metadados de mídia acessível e pastas autorizadas pelo usuário;
-- `FileRemovalDataSource`: resolução, revalidação e remoção de arquivos em pastas autorizadas;
+- `FileRemovalDataSource`: resolução, revalidação e remoção de arquivos de pastas e mídia autorizada;
+- `MediaFileRemovalDataSource`: integração com MediaStore, confirmação oficial e verificação da exclusão;
 - `ActionExecutor`: execução centralizada das ações suportadas;
 - `AgentPreferences`: identidade, token e resultados usados na idempotência;
 - `ActionPollingWorker`: consulta periódica em segundo plano.
@@ -74,7 +75,7 @@ usuário toca em uma ação
 - o agent anuncia capabilities do contrato e mapeia internamente as intenções para APIs Android;
 - URIs, permissões e caminhos físicos de arquivos permanecem no agent e nunca são enviados ao controller;
 - referências de inventário não substituem a validação local antes de uma futura remoção;
-- a remoção de arquivos usa a autorização persistida da pasta e valida novamente a revisão antes de excluir;
+- a remoção de arquivos usa a autorização da fonte e valida novamente a revisão antes de excluir;
 - resultados enviados ao controlador representam o domínio da aplicação e não códigos Android diretamente;
 - aprovações pendentes e resultados finais não enviados devem ser persistidos para retomada automática;
 - toda ação destrutiva exige iniciativa explícita;
@@ -83,6 +84,8 @@ usuário toca em uma ação
 - uma ação redeliverada reutiliza o resultado persistido em vez de repetir seu efeito.
 
 ## Limites entre camadas
+
+Para mídia, o repository persiste URI local, nome, revisão e indicador de solicitação iniciada na aprovação. No Android 11+, `MediaStore.createDeleteRequest` executa a exclusão após o consentimento; o retorno é verificado sem repetir `delete`. No Android 10, `RecoverableSecurityException` fornece a confirmação e a exclusão é tentada novamente após a autorização e revalidação. No Android 8/9, o fluxo exige permissão de escrita e a confirmação explícita no agent. A Activity apenas lança o IntentSender e encaminha o resultado associado ao `actionId`; esse identificador sobrevive à recriação da Activity. Se o processo perder o retorno, a próxima consulta verifica a ausência de uma mídia cuja solicitação já havia sido iniciada. Sem acesso suficiente para confirmar, a pendência é mantida. Resultados finais são persistidos antes do envio e o inventário é sincronizado também nas retomadas. URIs e detalhes da plataforma não fazem parte do contrato com o controller.
 
 O endereço do controlador é configurado antes do pareamento e persistido no DataStore. O repository fornece o mesmo endereço ao cliente HTTP no primeiro plano e no WorkManager, com fallback para o endereço de build para instalações anteriores. Credenciais existentes não podem ser enviadas a outro controlador por uma edição de endereço. O cliente não segue redirecionamentos HTTP automaticamente.
 

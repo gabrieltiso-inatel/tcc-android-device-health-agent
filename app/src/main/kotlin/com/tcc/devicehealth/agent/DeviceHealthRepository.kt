@@ -24,7 +24,8 @@ interface DeviceHealthRepository {
     suspend fun getPendingApprovals(): Result<List<PendingApproval>>
     suspend fun getPendingFileApprovals(): Result<List<PendingFileApproval>>
     suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit>
-    suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<Unit>
+    suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<FileRemovalRequest?>
+    suspend fun completePlatformFileRemoval(actionId: String, approved: Boolean, launchFailed: Boolean = false): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
     suspend fun getSnapshots(): Result<DeviceSnapshots>
 }
@@ -185,7 +186,7 @@ class AndroidDeviceHealthRepository(
         syncAppInventory().getOrThrow()
     }
 
-    override suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<Unit> = runCatching {
+    override suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<FileRemovalRequest?> = runCatching {
         val approval = preferences.getPendingFileApprovals().firstOrNull { pending -> pending.actionId == actionId }
             ?: error("File removal approval is no longer pending")
         val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
@@ -193,7 +194,13 @@ class AndroidDeviceHealthRepository(
             StoredActionResult(false, "File removal cancelled", "cancelled", "approval_declined")
         } else {
             try {
-                fileRemovalDataSource.remove(approval)
+                if (approval.mediaUri != null) {
+                    preferences.savePendingFileApproval(approval.copy(platformRequestStarted = true))
+                }
+                val intentSender = fileRemovalDataSource.remove(approval)
+                if (intentSender != null) {
+                    return@runCatching FileRemovalRequest(actionId, intentSender)
+                }
                 StoredActionResult(true, "File removed", "completed", "file_removed")
             } catch (error: FileNotFoundException) {
                 StoredActionResult(false, "File is no longer available", "failed", "file_not_found")
@@ -201,13 +208,47 @@ class AndroidDeviceHealthRepository(
                 StoredActionResult(false, "File changed since it was selected", "failed", "file_changed")
             } catch (error: FileNotAllowedException) {
                 StoredActionResult(false, "File cannot be removed", "failed", "file_not_allowed")
+            } catch (error: SecurityException) {
+                StoredActionResult(false, "File access is no longer authorized", "failed", "file_not_allowed")
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                StoredActionResult(false, "File removal failed", "failed", "execution_failed")
             }
         }
+        recordFileResult(approval, result)
+        null
+    }
+
+    override suspend fun completePlatformFileRemoval(actionId: String, approved: Boolean, launchFailed: Boolean): Result<Unit> = runCatching {
+        val approval = preferences.getPendingFileApprovals().firstOrNull { it.actionId == actionId }
+            ?: return@runCatching
+        check(approval.platformRequestStarted && approval.mediaUri != null)
+        val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
+        val result = previous ?: if (launchFailed) {
+            StoredActionResult(false, "Could not open the system confirmation", "failed", "execution_failed")
+        } else if (!approved) {
+            StoredActionResult(false, "File removal cancelled", "cancelled", "approval_declined")
+        } else {
+            val execution = runCatching {
+                fileRemovalDataSource.finishMediaRemoval(approval)
+                ActionExecution("File removed")
+            }
+            when (val error = execution.exceptionOrNull()) {
+                null -> StoredActionResult(true, "File removed", "completed", "file_removed")
+                is SecurityException -> StoredActionResult(false, "File access is no longer authorized", "failed", "file_not_allowed")
+                else -> storedActionResult(Result.failure(error)) ?: throw error
+            }
+        }
+        recordFileResult(approval, result)
+    }
+
+    private suspend fun recordFileResult(approval: PendingFileApproval, result: StoredActionResult) {
+        val actionId = approval.actionId
         preferences.saveActionResult(actionId, result)
+        syncFileInventory().getOrThrow()
         controllerClient.sendActionResult(actionId, result, requireToken())
         preferences.removePendingFileApproval(actionId)
         approvalNotificationDataSource.cancel(actionId)
-        syncFileInventory().getOrThrow()
     }
 
     private suspend fun resendCompletedApprovalResults(token: String) {
@@ -222,9 +263,18 @@ class AndroidDeviceHealthRepository(
         preferences.getPendingFileApprovals().forEach { approval ->
             val result = preferences.getActionResult(approval.actionId)
             if (result != null && result.status != "awaiting_approval") {
-                controllerClient.sendActionResult(approval.actionId, result, token)
-                preferences.removePendingFileApproval(approval.actionId)
-                approvalNotificationDataSource.cancel(approval.actionId)
+                recordFileResult(approval, result)
+            } else if (approval.platformRequestStarted && approval.mediaUri != null) {
+                val absent = try {
+                    fileRemovalDataSource.isMediaAbsent(approval)
+                } catch (_: FileNotAllowedException) {
+                    false
+                } catch (_: SecurityException) {
+                    false
+                }
+                if (absent) {
+                    recordFileResult(approval, StoredActionResult(true, "File is already absent after the removal request", "completed", "file_already_absent"))
+                }
             }
         }
     }
@@ -273,9 +323,7 @@ class AndroidDeviceHealthRepository(
                 approvalNotificationDataSource.notify(approval)
             }
             "removeFile" -> {
-                val approval = action.fileId?.let { fileId ->
-                    PendingFileApproval(action.id, fileId, action.expectedRevision, fileRemovalDataSource.readName(fileId))
-                } ?: throw IllegalStateException("File removal target is missing")
+                val approval = fileRemovalDataSource.createApproval(action)
                 preferences.savePendingFileApproval(approval)
                 approvalNotificationDataSource.notifyFile(approval)
             }

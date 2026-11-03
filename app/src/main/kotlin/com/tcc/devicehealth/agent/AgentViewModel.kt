@@ -28,6 +28,7 @@ data class AgentUiState(
     val pendingFileApprovals: List<PendingFileApproval> = emptyList(),
     val approvalRequest: PendingApproval? = null,
     val fileApprovalRequest: PendingFileApproval? = null,
+    val platformFileRemovalRequest: FileRemovalRequest? = null,
     val isLoading: Boolean = false,
     val message: String? = null,
 )
@@ -174,14 +175,31 @@ class AgentViewModel(
             val result = withContext(ioDispatcher) {
                 repository.completeFileRemoval(approval.actionId, approved)
             }
+            mutableState.value = mutableState.value.copy(platformFileRemovalRequest = result.getOrNull())
             loadActionHistory()
             loadPendingFileApprovals()
             loadSnapshots()
             mutableState.value = mutableState.value.copy(
                 telemetry = repository.readTelemetry(),
                 isLoading = false,
-                message = result.fold({ "File action recorded" }, { "Could not finish file action" }),
+                message = result.fold({ if (it != null) "Confirm removal in the Android dialog" else "File action recorded" }, { "Could not finish file action" }),
             )
+        }
+    }
+
+    fun fileRemovalRequestLaunched() {
+        mutableState.value = mutableState.value.copy(platformFileRemovalRequest = null)
+    }
+
+    fun handlePlatformFileRemovalResult(actionId: String, approved: Boolean, launchFailed: Boolean = false) {
+        viewModelScope.launch {
+            mutableState.value = mutableState.value.copy(isLoading = true, platformFileRemovalRequest = null)
+            val result = withContext(ioDispatcher) { repository.completePlatformFileRemoval(actionId, approved, launchFailed) }
+            loadActionHistory()
+            loadPendingFileApprovals()
+            loadSnapshots()
+            mutableState.value = mutableState.value.copy(isLoading = false,
+                message = result.fold({ "File action recorded" }, { "Could not finish file action. The result will be retried." }))
         }
     }
 

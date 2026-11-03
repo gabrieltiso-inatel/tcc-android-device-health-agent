@@ -59,7 +59,7 @@ Depois:
 
 No inventário, o próprio agent continua visível para diagnóstico, mas informa `canRemove=false`; a decisão de remoção também é validada novamente no momento da execução.
 
-No inventário de arquivos, `fileId`, `sourceId` e `revision` são referências opacas geradas pelo agent. O agent mantém localmente as referências Android necessárias para uma futura revalidação e remoção.
+No inventário de arquivos, `fileId`, `sourceId` e `revision` são referências opacas geradas pelo agent. O agent mantém localmente as referências Android necessárias para revalidação e remoção. `removeFile` cobre pastas autorizadas e mídia acessível, incluindo confirmação oficial e persistência da solicitação em andamento. `canRemove` considera os fluxos de consentimento suportados, e não apenas a possibilidade de exclusão imediata.
 
 ## Context Routing
 

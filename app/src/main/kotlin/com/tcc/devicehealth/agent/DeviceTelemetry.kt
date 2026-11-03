@@ -45,7 +45,11 @@ data class PendingFileApproval(
     val fileId: String,
     val expectedRevision: String?,
     val name: String? = null,
+    val mediaUri: String? = null,
+    val platformRequestStarted: Boolean = false,
 )
+
+data class FileRemovalRequest(val actionId: String, val intentSender: android.content.IntentSender)
 
 data class StorageSummary(
     val totalBytes: Long,

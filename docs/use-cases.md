@@ -77,7 +77,9 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - verificar novamente existência, revisão e possibilidade de remoção;
 - solicitar o consentimento oficial necessário;
 - persistir e enviar o resultado sem repetir o efeito em uma redelivery;
-- nesta etapa, remover somente arquivos de pastas autorizadas pelo usuário; mídia compartilhada permanece somente para leitura.
+- remover arquivos de pastas autorizadas e mídia acessível (Images, Videos e Audio), usando confirmação oficial quando exigida;
+- no Android 11+, abrir a solicitação de exclusão do sistema e verificar seu resultado; no Android 10, tratar a autorização recuperável; no Android 8/9, exigir também a permissão de escrita;
+- preservar a referência local e a solicitação em andamento para retomar resultados após encerramento do processo.
 
 ## Planejado
 

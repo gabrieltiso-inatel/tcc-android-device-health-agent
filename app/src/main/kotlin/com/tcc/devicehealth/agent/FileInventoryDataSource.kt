@@ -104,7 +104,7 @@ internal class FileInventoryDataSource(
                         mimeType = cursor.getString(mimeIndex),
                         sizeBytes = size,
                         modifiedAt = modifiedSeconds.takeIf { it > 0 }?.let { Instant.ofEpochSecond(it).toString() },
-                        canRemove = false,
+                        canRemove = supportsMediaRemoval(appContext),
                         revision = fileReferenceId("$uri|$size|$modifiedSeconds"),
                     )
                     count += 1

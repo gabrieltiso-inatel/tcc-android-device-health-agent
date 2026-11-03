@@ -24,6 +24,21 @@ class AgentViewModelTest {
     fun tearDown() { Dispatchers.resetMain() }
 
     @Test
+    fun platformCancellationAndLaunchFailureAreForwardedWithTheirActionId() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+
+        viewModel.handlePlatformFileRemovalResult("media-action", false)
+        runCurrent()
+        assertEquals(Triple("media-action", false, false), repository.platformDecision)
+
+        viewModel.handlePlatformFileRemovalResult("failed-launch", false, true)
+        runCurrent()
+        assertEquals(Triple("failed-launch", false, true), repository.platformDecision)
+    }
+
+    @Test
     fun decliningAFileDoesNotRequireOpeningItsReview() = runTest(dispatcher) {
         val repository = FakeDeviceHealthRepository()
         val viewModel = AgentViewModel(repository, dispatcher)
@@ -96,6 +111,7 @@ class AgentViewModelTest {
 }
 
 private class FakeDeviceHealthRepository : DeviceHealthRepository {
+    var platformDecision: Triple<String, Boolean, Boolean>? = null
     var fileDecision: Pair<String, Boolean>? = null
     var applicationDecision: Pair<String, Boolean>? = null
     var request: DeviceAction? = null
@@ -122,8 +138,13 @@ private class FakeDeviceHealthRepository : DeviceHealthRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<Unit> {
+    override suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<FileRemovalRequest?> {
         fileDecision = actionId to approved
+        return Result.success(null)
+    }
+
+    override suspend fun completePlatformFileRemoval(actionId: String, approved: Boolean, launchFailed: Boolean): Result<Unit> {
+        platformDecision = Triple(actionId, approved, launchFailed)
         return Result.success(Unit)
     }
 

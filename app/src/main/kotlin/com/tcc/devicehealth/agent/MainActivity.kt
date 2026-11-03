@@ -6,8 +6,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.activity.result.IntentSenderRequest
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : ComponentActivity() {
@@ -33,6 +37,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             DeviceHealthTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
+                var mediaActionId by rememberSaveable { mutableStateOf<String?>(null) }
+                val mediaRemovalLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.StartIntentSenderForResult(),
+                ) { result ->
+                    val launchFailed = result.data?.hasExtra(ActivityResultContracts.StartIntentSenderForResult.EXTRA_SEND_INTENT_EXCEPTION) == true
+                    mediaActionId?.let { viewModel.handlePlatformFileRemovalResult(it, result.resultCode == RESULT_OK, launchFailed) }
+                    mediaActionId = null
+                }
                 val removalLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.StartActivityForResult(),
                 ) { result ->
@@ -56,6 +68,17 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(state.approvalRequest) {
                     state.approvalRequest?.let { approval ->
                         removalLauncher.launch(ApplicationRemovalDataSource.createIntent(approval))
+                    }
+                }
+                LaunchedEffect(state.platformFileRemovalRequest) {
+                    state.platformFileRemovalRequest?.let { request ->
+                        mediaActionId = request.actionId
+                        try {
+                            mediaRemovalLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+                            viewModel.fileRemovalRequestLaunched()
+                        } catch (_: android.content.IntentSender.SendIntentException) {
+                            viewModel.handlePlatformFileRemovalResult(request.actionId, false, true)
+                        }
                     }
                 }
                 AgentScreen(
@@ -82,7 +105,9 @@ class MainActivity : ComponentActivity() {
                                 android.Manifest.permission.READ_MEDIA_AUDIO,
                             )
                         } else {
-                            arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                            if (android.os.Build.VERSION.SDK_INT <= 28) {
+                                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            } else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
                         }
                         mediaPermissionLauncher.launch(permissions)
                     },

@@ -119,6 +119,8 @@ class AgentPreferences(
                 fileId = approval.getString("fileId"),
                 expectedRevision = approval.optString("expectedRevision").ifEmpty { null },
                 name = approval.optString("name").ifEmpty { null },
+                mediaUri = approval.optString("mediaUri").ifEmpty { null },
+                platformRequestStarted = approval.optBoolean("platformRequestStarted", false),
             )
         }
     }
@@ -152,6 +154,8 @@ class AgentPreferences(
                 put("fileId", approval.fileId)
                 approval.expectedRevision?.let { put("expectedRevision", it) }
                 approval.name?.let { put("name", it) }
+                approval.mediaUri?.let { put("mediaUri", it) }
+                put("platformRequestStarted", approval.platformRequestStarted)
             })
         }
     }.toString()
