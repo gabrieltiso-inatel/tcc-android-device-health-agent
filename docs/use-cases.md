@@ -56,6 +56,15 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - compartilhar a mesma fonte de verdade com a interface web.
 - filtrar por estado e navegar em páginas de 20 entradas.
 
+### Remover aplicação
+
+- validar a aplicação e a versão no momento da ação e novamente antes da confirmação;
+- preservar uma aprovação pendente quando o processo do agent for encerrado;
+- iniciar a confirmação oficial do Android quando o usuário revisar a ação;
+- permitir cancelar a aprovação diretamente na lista de pendências;
+- decidir o resultado pelo estado real do pacote após a confirmação;
+- registrar o resultado sem repetir o efeito, reenviá-lo após falhas de conexão e sincronizar o inventário depois da decisão.
+
 ## Parcial
 
 ### Sincronizar estado automaticamente
@@ -63,13 +72,6 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - telemetria básica, armazenamento e inventário de aplicativos já são sincronizados automaticamente;
 - com a tela visível, sincronizar imediatamente e repetir telemetria a cada 30 segundos, armazenamento a cada 1 minuto e apps a cada 5 minutos; intervalos configuráveis em `SyncIntervals.kt`;
 - sincronizações automáticas futuras não devem gerar histórico de ações.
-
-### Remover aplicação
-
-- validar a aplicação e a versão no momento da ação;
-- preservar uma aprovação pendente quando o processo do agent for encerrado;
-- iniciar a confirmação oficial do Android quando o usuário revisar a ação;
-- registrar o resultado e sincronizar o inventário depois da decisão.
 
 ### Remover arquivo
 
