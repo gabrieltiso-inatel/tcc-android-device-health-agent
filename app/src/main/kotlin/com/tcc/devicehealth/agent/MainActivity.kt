@@ -50,6 +50,14 @@ class MainActivity : ComponentActivity() {
                 ) { result ->
                     viewModel.handleApplicationRemovalConfirmation(result.resultCode == RESULT_OK)
                 }
+                val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission(),
+                ) {}
+                LaunchedEffect(state.isPaired) {
+                    if (state.isPaired && needsNotificationPermission()) {
+                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
                 val folderLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.OpenDocumentTree(),
                 ) { uri ->
@@ -116,4 +124,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun needsNotificationPermission(): Boolean = android.os.Build.VERSION.SDK_INT >= 33 &&
+        checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
 }
