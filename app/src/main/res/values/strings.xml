@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Device Health Agent</string>
+    <string name="app_brand">DEVICE HEALTH</string>
+    <string name="this_device">This device</string>
+
+    <string name="tab_home">Home</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_files">Files</string>
+    <string name="tab_approvals">Approvals</string>
+    <string name="tab_history">History</string>
+
+    <string name="health_good_title">All good</string>
+    <string name="health_good_message">Battery, storage and approvals need no attention.</string>
+    <string name="health_attention_title">Needs your attention</string>
+    <plurals name="health_approvals_message">
+        <item quantity="one">%d removal is waiting for your approval.</item>
+        <item quantity="other">%d removals are waiting for your approval.</item>
+    </plurals>
+    <string name="health_low_battery_title">Low battery</string>
+    <string name="health_low_battery_message">Connect the charger to keep the device available.</string>
+    <string name="health_storage_title">Storage almost full</string>
+    <string name="health_storage_message">Review large files and apps you no longer use.</string>
+    <string name="health_saved_title">Showing saved readings</string>
+    <string name="health_saved_message">The dashboard could not be reached. Readings will refresh automatically.</string>
+    <string name="last_sync">Last reading %1$s</string>
+    <string name="review_approvals">Review approvals</string>
+
+    <string name="battery_title">Battery</string>
+    <string name="battery_charging">Charging</string>
+    <string name="battery_not_charging">Not charging</string>
+    <string name="storage_title">Storage</string>
+    <string name="storage_used_free_of">%1$s free of %2$s</string>
+    <string name="no_reading_yet">No reading yet</string>
+    <string name="refresh_battery">Refresh battery reading</string>
+    <string name="refresh_storage">Refresh storage reading</string>
+    <string name="refresh_apps">Refresh app list</string>
+    <string name="refresh_files">Refresh file list</string>
+    <string name="updated_at">updated %1$s</string>
+
+    <string name="recent_activity">Recent activity</string>
+    <string name="see_all">See all</string>
+    <string name="no_activity">Requests from this phone or from the dashboard will appear here.</string>
+
+    <string name="apps_title">Installed apps</string>
+    <plurals name="apps_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="apps_description">Apps you installed. Removing one always asks for your approval.</string>
+    <string name="apps_waiting">Waiting for the first app list.</string>
+    <string name="apps_empty_title">No apps to show</string>
+    <string name="search_apps">Search apps</string>
+    <string name="version">Version %1$s</string>
+    <string name="removal_unavailable">Protected</string>
+    <string name="removal_in_progress">Waiting…</string>
+    <string name="remove">Remove</string>
+    <string name="read_only">Read only</string>
+    <string name="search_no_results">Nothing matches your search.</string>
+
+    <string name="files_title">Files</string>
+    <plurals name="files_count">
+        <item quantity="one">%d file</item>
+        <item quantity="other">%d files</item>
+    </plurals>
+    <string name="files_waiting">Authorize a folder or media access, then refresh.</string>
+    <string name="files_description">Only names, sizes and dates are shared. File contents never leave this phone.</string>
+    <string name="file_access_title">File access</string>
+    <string name="files_empty_title">No files to show</string>
+    <string name="search_files">Search files</string>
+    <string name="choose_folder">Choose folder</string>
+    <string name="media_access">Media access</string>
+    <string name="file_kind_image">Image</string>
+    <string name="file_kind_video">Video</string>
+    <string name="file_kind_audio">Audio</string>
+    <string name="file_kind_document">Document</string>
+    <string name="file_kind_other">File</string>
+    <string name="authorization_available">Access allowed</string>
+    <string name="authorization_requires_consent">Access not allowed yet</string>
+    <string name="authorization_unavailable">Access no longer available</string>
+    <string name="authorization_other">Unknown access</string>
+    <string name="file_previously_selected">the previously selected file</string>
+
+    <string name="approvals_title">Approvals</string>
+    <string name="approvals_description">Nothing is removed without your confirmation.</string>
+    <string name="approvals_empty_title">You\'re all caught up</string>
+    <string name="approvals_empty_message">Requests that need your approval will appear here.</string>
+    <string name="approval_remove_title">Remove %1$s?</string>
+    <string name="approval_app_message">Android will ask you to confirm before the app is removed.</string>
+    <string name="approval_file_message">You will confirm once more before the file is removed.</string>
+    <string name="requested_from_controller">Requested from the dashboard %1$s</string>
+    <string name="requested_on_device">Requested on this phone %1$s</string>
+    <string name="review">Review</string>
+    <string name="decline">Decline</string>
+
+    <string name="history_title">History</string>
+    <string name="history_description">Actions requested on this phone or from the dashboard.</string>
+    <string name="history_empty_title">No matching actions</string>
+    <string name="history_empty_message">Automatic readings do not create history entries.</string>
+    <string name="filter_all">All</string>
+    <string name="filter_active">In progress</string>
+
+    <string name="action_collect_telemetry">Battery reading</string>
+    <string name="action_collect_storage">Storage reading</string>
+    <string name="action_collect_apps">App list</string>
+    <string name="action_collect_files">File list</string>
+    <string name="action_remove_application">App removal</string>
+    <string name="action_remove_file">File removal</string>
+    <string name="action_other">Action</string>
+    <string name="status_pending">Queued</string>
+    <string name="status_delivered">Sent to phone</string>
+    <string name="status_awaiting_approval">Awaiting approval</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_cancelled">Declined</string>
+    <string name="status_failed">Failed</string>
+    <string name="status_expired">Expired</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="origin_device">This phone</string>
+    <string name="origin_controller">Dashboard</string>
+    <string name="result_application_removed">App removed</string>
+    <string name="result_application_absent">The app was already removed</string>
+    <string name="result_application_cancelled">Removal declined</string>
+    <string name="result_application_failed">The app could not be removed</string>
+    <string name="result_application_not_found">The app is no longer installed</string>
+    <string name="result_application_changed">The app was updated after it was selected</string>
+    <string name="result_application_not_allowed">This app cannot be removed</string>
+    <string name="result_file_removed">File removed</string>
+    <string name="result_file_cancelled">Removal declined</string>
+    <string name="result_file_not_found">The file is no longer available</string>
+    <string name="result_file_changed">The file changed after it was selected</string>
+    <string name="result_file_not_allowed">This file cannot be removed</string>
+    <string name="result_file_access_revoked">Access to this file was revoked</string>
+    <string name="result_timed_out">The phone did not respond in time</string>
+    <string name="result_file_failed">The file could not be removed</string>
+    <string name="result_confirmation_failed">The Android confirmation could not be opened</string>
+    <string name="result_requires_approval">Waiting for your approval</string>
+    <string name="result_telemetry_sent">Reading sent</string>
+    <string name="result_collected">List updated</string>
+    <string name="result_not_supported">Not supported on this phone</string>
+    <string name="result_execution_failed">Something went wrong on the phone</string>
+
+    <string name="time_just_now">just now</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">%d minute ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">%d hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="time_days_ago">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <string name="page_previous">Previous</string>
+    <string name="page_next">Next</string>
+    <string name="page_range">%1$d–%2$d of %3$d</string>
+
+    <string name="pairing_title">Connect this phone</string>
+    <string name="pairing_description">On the computer, open the dashboard and choose Add device. Then enter the address and the 6-digit code shown there.</string>
+    <string name="controller_address">Dashboard address</string>
+    <string name="controller_address_hint">For example http://192.168.0.10:3000</string>
+    <string name="pairing_code">Pairing code</string>
+    <string name="pairing_code_hint">The code expires 5 minutes after it is created.</string>
+    <string name="connect">Connect</string>
+    <string name="connecting">Connecting…</string>
+    <string name="saved_readings_notice">Could not reach the dashboard. Showing the last saved readings.</string>
+
+    <string name="request_removal_title">Request removal?</string>
+    <string name="request_removal_message">%1$s will only be removed after you review and confirm it.</string>
+    <string name="request_removal">Request removal</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
+    <string name="file_confirm_title">Remove file?</string>
+    <string name="file_confirm_message">%1$s will be permanently removed from this phone.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_portuguese">Português (Brasil)</string>
+    <string name="language_english">English</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_permissions_description">What this app can access on this phone.</string>
+    <string name="permission_notifications">Notifications</string>
+    <string name="permission_notifications_description">Warns you when a removal needs your approval.</string>
+    <string name="permission_media">Photos, videos and audio</string>
+    <string name="permission_media_description">Lists media so you can find large files.</string>
+    <string name="permission_folders">Authorized folders</string>
+    <plurals name="permission_folders_count">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
+    <string name="permission_allow">Allow</string>
+    <string name="permission_granted">Allowed</string>
+    <string name="settings_connection">Connection</string>
+    <string name="connection_status">Status</string>
+    <string name="connection_ok">Connected to the dashboard</string>
+    <string name="connection_saved">Dashboard unreachable</string>
+    <string name="agent_version">App version</string>
+
+    <string name="message_enter_code">Enter the 6-digit pairing code.</string>
+    <string name="message_paired">Phone connected.</string>
+    <string name="message_pairing_failed">Could not connect. Check the address and the code.</string>
+    <string name="message_request_processed">Request sent.</string>
+    <string name="message_request_failed">Could not send the request. Check History before trying again.</string>
+    <string name="message_folder_added">Folder added. Refresh files to include it.</string>
+    <string name="message_folder_failed">Could not add the folder.</string>
+    <string name="message_confirm_android">Confirm the removal in the Android dialog.</string>
+    <string name="message_file_recorded">File decision recorded.</string>
+    <string name="message_file_failed">Could not finish the file action.</string>
+    <string name="message_file_retry">Could not finish the file action. It will be retried.</string>
+    <string name="message_app_recorded">App decision recorded.</string>
+    <string name="message_app_failed">Could not finish the app action. It will be retried.</string>
+    <string name="message_app_removed">%1$s was removed.</string>
+    <string name="message_app_declined">Removal of %1$s was declined.</string>
+    <string name="message_app_not_removed">%1$s was not removed.</string>
+    <string name="message_preferences_failed">Could not save your preference.</string>
+    <plurals name="message_actions_processed">
+        <item quantity="one">%d new request received.</item>
+        <item quantity="other">%d new requests received.</item>
+    </plurals>
+
+    <string name="notification_channel">Removal approvals</string>
+    <string name="notification_title">Approval needed</string>
+    <string name="notification_review_removal">Review the removal of %1$s</string>
+</resources>

@@ -45,6 +45,21 @@ class AgentPreferences(
         dataStore.edit { preferences -> preferences[controllerAddressKey] = address }
     }
 
+    suspend fun getDisplayPreferences(): DisplayPreferences {
+        val preferences = dataStore.data.first()
+        return DisplayPreferences(
+            themeMode = enumValueOrDefault(ThemeMode.values(), preferences[themeModeKey], ThemeMode.System),
+            language = enumValueOrDefault(AppLanguage.values(), preferences[languageKey], AppLanguage.System),
+        )
+    }
+
+    suspend fun saveDisplayPreferences(displayPreferences: DisplayPreferences) {
+        dataStore.edit { preferences ->
+            preferences[themeModeKey] = displayPreferences.themeMode.name
+            preferences[languageKey] = displayPreferences.language.name
+        }
+    }
+
     suspend fun saveToken(token: String) {
         dataStore.edit { preferences -> preferences[tokenKey] = token }
     }
@@ -164,6 +179,8 @@ class AgentPreferences(
         val deviceIdKey = stringPreferencesKey("device_id")
         val tokenKey = stringPreferencesKey("controller_token")
         val controllerAddressKey = stringPreferencesKey("controller_address")
+        val themeModeKey = stringPreferencesKey("theme_mode")
+        val languageKey = stringPreferencesKey("language")
 
         fun actionSucceededKey(actionId: String) = booleanPreferencesKey("action_${actionId}_succeeded")
 

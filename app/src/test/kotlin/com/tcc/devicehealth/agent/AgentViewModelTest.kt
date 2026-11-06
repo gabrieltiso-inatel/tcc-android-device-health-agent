@@ -122,6 +122,32 @@ class AgentViewModelTest {
     }
 
     @Test
+    fun displayPreferencesAreLoadedAndSaved() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        repository.displayPreferences = DisplayPreferences(themeMode = ThemeMode.Dark)
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+
+        viewModel.updateLanguage(AppLanguage.Portuguese)
+        runCurrent()
+
+        assertEquals(DisplayPreferences(ThemeMode.Dark, AppLanguage.Portuguese), viewModel.state.value.displayPreferences)
+        assertEquals(DisplayPreferences(ThemeMode.Dark, AppLanguage.Portuguese), repository.displayPreferences)
+    }
+
+    @Test
+    fun shownMessageIsCleared() = runTest(dispatcher) {
+        val viewModel = AgentViewModel(FakeDeviceHealthRepository(), dispatcher)
+        runCurrent()
+        viewModel.pair()
+        val message = checkNotNull(viewModel.state.value.message)
+
+        viewModel.messageShown(message)
+
+        assertNull(viewModel.state.value.message)
+    }
+
+    @Test
     fun localRemovalPreservesTheObservedVersionAndRevision() = runTest(dispatcher) {
         val repository = FakeDeviceHealthRepository()
         val viewModel = AgentViewModel(repository, dispatcher)
@@ -161,6 +187,7 @@ private class FakeDeviceHealthRepository(
     var fileDecision: Pair<String, Boolean>? = null
     var applicationDecision: Pair<String, ApplicationRemovalDecision>? = null
     var reviewedActionId: String? = null
+    var displayPreferences = DisplayPreferences()
     var request: DeviceAction? = null
     val snapshots = DeviceSnapshots(storage = StorageSummary(100, 40, 60, "2026-10-31T12:00:00Z"))
 
@@ -177,6 +204,11 @@ private class FakeDeviceHealthRepository(
     override suspend fun checkActions() = Result.success(0)
     override suspend fun getActionHistory() = Result.success(emptyList<DeviceAction>())
     override suspend fun getSnapshots() = Result.success(snapshots)
+    override suspend fun getDisplayPreferences() = displayPreferences
+    override suspend fun saveDisplayPreferences(displayPreferences: DisplayPreferences): Result<Unit> {
+        this.displayPreferences = displayPreferences
+        return Result.success(Unit)
+    }
     override suspend fun getPendingApprovals() = Result.success(emptyList<PendingApproval>())
     override suspend fun getPendingFileApprovals() = Result.success(emptyList<PendingFileApproval>())
 

@@ -45,7 +45,8 @@ Concluído:
 - telemetria, resumo de armazenamento e inventário de aplicativos;
 - inventário inicial de arquivos compartilhados e pastas autorizadas;
 - pareamento, autenticação, retry, expiração e idempotência;
-- `removeApplication` validado ponta a ponta com validação local antes da confirmação oficial, resultado decidido pelo estado real do pacote e reenvio idempotente.
+- `removeApplication` validado ponta a ponta com validação local antes da confirmação oficial, resultado decidido pelo estado real do pacote e reenvio idempotente;
+- configurações de tema, idioma (pt-BR e inglês) e permissões, com resumo de saúde no início.
 
 Próximo:
 

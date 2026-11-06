@@ -29,6 +29,8 @@ interface DeviceHealthRepository {
     suspend fun completePlatformFileRemoval(actionId: String, approved: Boolean, launchFailed: Boolean = false): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
     suspend fun getSnapshots(): Result<DeviceSnapshots>
+    suspend fun getDisplayPreferences(): DisplayPreferences
+    suspend fun saveDisplayPreferences(displayPreferences: DisplayPreferences): Result<Unit>
 }
 
 class AndroidDeviceHealthRepository(
@@ -62,6 +64,12 @@ class AndroidDeviceHealthRepository(
     override suspend fun readTelemetry(): DeviceTelemetry = telemetrySource.read()
 
     override suspend fun isPaired(): Boolean = preferences.getToken() != null
+
+    override suspend fun getDisplayPreferences(): DisplayPreferences = preferences.getDisplayPreferences()
+
+    override suspend fun saveDisplayPreferences(displayPreferences: DisplayPreferences): Result<Unit> = runCatching {
+        preferences.saveDisplayPreferences(displayPreferences)
+    }
 
     override suspend fun getControllerAddress(): String = preferences.getControllerAddress() ?: controllerBaseUrl
 
