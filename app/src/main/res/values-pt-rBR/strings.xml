@@ -57,6 +57,11 @@
     <string name="remove">Remover</string>
     <string name="read_only">Somente leitura</string>
     <string name="search_no_results">Nada corresponde à sua busca.</string>
+    <string name="apps_none">Nenhum app</string>
+    <string name="apps_empty_inventory">Nenhum app instalado pelo usuário foi encontrado neste celular.</string>
+    <string name="files_none">Nenhum arquivo</string>
+    <string name="files_empty_sources">As pastas e mídias autorizadas ainda não têm arquivos.</string>
+    <string name="permission_folders_none">Nenhuma pasta ainda</string>
 
     <string name="files_title">Arquivos</string>
     <plurals name="files_count">
@@ -206,8 +211,15 @@
     <string name="message_paired">Celular conectado.</string>
     <string name="message_pairing_failed">Não foi possível conectar. Confira o endereço e o código.</string>
     <string name="message_request_processed">Pedido enviado.</string>
+    <string name="message_battery_updated">Leitura da bateria atualizada.</string>
+    <string name="message_storage_updated">Leitura do armazenamento atualizada.</string>
+    <string name="message_apps_updated">Lista de apps atualizada.</string>
+    <string name="message_files_updated">Lista de arquivos atualizada.</string>
+    <string name="message_removal_requested">Remoção pedida. Revise em Aprovações.</string>
+    <string name="message_media_granted">Acesso à mídia permitido. Lista de arquivos atualizada.</string>
+    <string name="message_media_denied">O acesso à mídia não foi permitido. Você pode mudar isso nas configurações do Android.</string>
     <string name="message_request_failed">Não foi possível enviar o pedido. Confira o Histórico antes de tentar de novo.</string>
-    <string name="message_folder_added">Pasta adicionada. Atualize os arquivos para incluí-la.</string>
+    <string name="message_folder_added">Pasta adicionada. Lista de arquivos atualizada.</string>
     <string name="message_folder_failed">Não foi possível adicionar a pasta.</string>
     <string name="message_confirm_android">Confirme a remoção na janela do Android.</string>
     <string name="message_file_recorded">Decisão sobre o arquivo registrada.</string>

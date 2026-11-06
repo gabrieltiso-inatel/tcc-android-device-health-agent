@@ -91,7 +91,7 @@ internal fun LazyListScope.settingsContent(
             val folders = state.snapshots.files?.sources.orEmpty().count { it.kind == "selected_folder" }
             ListRow(
                 title = stringResource(R.string.permission_folders),
-                supporting = quantityText(R.plurals.permission_folders_count, folders),
+                supporting = countText(R.plurals.permission_folders_count, R.string.permission_folders_none, folders),
                 icon = R.drawable.ic_folder,
                 trailing = { OutlinedButton(onClick = onSelectFolder) { Text(stringResource(R.string.choose_folder)) } },
             )

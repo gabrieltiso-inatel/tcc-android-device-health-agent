@@ -73,6 +73,23 @@ internal fun actionLabel(type: String): Int = when (type) {
 }
 
 @StringRes
+internal fun emptyListMessage(isWaiting: Boolean, query: String, @StringRes waiting: Int, @StringRes empty: Int): Int = when {
+    isWaiting -> waiting
+    query.isNotBlank() -> R.string.search_no_results
+    else -> empty
+}
+
+@StringRes
+internal fun actionFinishedMessage(type: String): Int = when (type) {
+    "collectTelemetry" -> R.string.message_battery_updated
+    "collectStorageSummary" -> R.string.message_storage_updated
+    "collectAppInventory" -> R.string.message_apps_updated
+    "collectFileInventory" -> R.string.message_files_updated
+    "removeApplication", "removeFile" -> R.string.message_removal_requested
+    else -> R.string.message_request_processed
+}
+
+@StringRes
 internal fun statusLabel(status: String): Int = when (status) {
     "pending" -> R.string.status_pending
     "delivered" -> R.string.status_delivered

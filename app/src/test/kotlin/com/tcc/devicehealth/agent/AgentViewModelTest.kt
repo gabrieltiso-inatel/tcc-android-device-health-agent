@@ -148,6 +148,56 @@ class AgentViewModelTest {
     }
 
     @Test
+    fun deniedMediaAccessDoesNotRequestAFileUpdate() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+
+        viewModel.onMediaAccessResult(granted = false)
+        runCurrent()
+
+        assertNull(repository.request)
+        assertEquals(AgentMessage.MediaAccessDenied, viewModel.state.value.message)
+    }
+
+    @Test
+    fun grantedMediaAccessUpdatesTheFileList() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+
+        viewModel.onMediaAccessResult(granted = true)
+        runCurrent()
+
+        assertEquals("collectFileInventory", repository.request?.type)
+        assertEquals(AgentMessage.MediaAccessGranted, viewModel.state.value.message)
+    }
+
+    @Test
+    fun addingAFolderUpdatesTheFileList() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+
+        viewModel.addFileTreeUri("content://folder")
+        runCurrent()
+
+        assertEquals("collectFileInventory", repository.request?.type)
+        assertEquals(AgentMessage.FolderAdded, viewModel.state.value.message)
+    }
+
+    @Test
+    fun updateRequestsReportWhatWasUpdated() = runTest(dispatcher) {
+        val viewModel = AgentViewModel(FakeDeviceHealthRepository(), dispatcher)
+        runCurrent()
+
+        viewModel.executeAction("collectAppInventory")
+        runCurrent()
+
+        assertEquals(AgentMessage.ActionFinished("collectAppInventory"), viewModel.state.value.message)
+    }
+
+    @Test
     fun localRemovalPreservesTheObservedVersionAndRevision() = runTest(dispatcher) {
         val repository = FakeDeviceHealthRepository()
         val viewModel = AgentViewModel(repository, dispatcher)

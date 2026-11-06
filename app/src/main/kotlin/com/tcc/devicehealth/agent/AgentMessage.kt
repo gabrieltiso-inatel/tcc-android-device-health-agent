@@ -4,8 +4,10 @@ sealed interface AgentMessage {
     data object EnterPairingCode : AgentMessage
     data object Paired : AgentMessage
     data object PairingFailed : AgentMessage
-    data object RequestProcessed : AgentMessage
     data object RequestFailed : AgentMessage
+    data object MediaAccessGranted : AgentMessage
+    data object MediaAccessDenied : AgentMessage
+    data class ActionFinished(val type: String) : AgentMessage
     data object FolderAdded : AgentMessage
     data object FolderFailed : AgentMessage
     data object ConfirmInAndroidDialog : AgentMessage

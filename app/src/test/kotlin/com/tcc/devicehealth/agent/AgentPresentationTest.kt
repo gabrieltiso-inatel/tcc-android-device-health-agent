@@ -66,6 +66,13 @@ class AgentPresentationTest {
         assertEquals(null, relativeTime("not a date", now))
     }
 
+    @Test
+    fun emptyListExplainsWhyItIsEmpty() {
+        assertEquals(R.string.files_waiting, emptyListMessage(true, "", R.string.files_waiting, R.string.files_empty_sources))
+        assertEquals(R.string.search_no_results, emptyListMessage(false, "photo", R.string.files_waiting, R.string.files_empty_sources))
+        assertEquals(R.string.files_empty_sources, emptyListMessage(false, " ", R.string.files_waiting, R.string.files_empty_sources))
+    }
+
     private fun telemetry(battery: Int, charging: Boolean) =
         DeviceTelemetry("device", "Phone", "Google", "Pixel", "14", 34, "0.1", emptyList(), battery, charging, "2026-11-06T12:00:00Z")
 
