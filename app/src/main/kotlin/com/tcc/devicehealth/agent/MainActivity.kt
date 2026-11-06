@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                 val removalLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.StartActivityForResult(),
                 ) { result ->
-                    viewModel.handleApplicationRemovalResult(result.resultCode == RESULT_OK)
+                    viewModel.handleApplicationRemovalConfirmation(result.resultCode == RESULT_OK)
                 }
                 val folderLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.OpenDocumentTree(),
@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(state.approvalRequest) {
                     state.approvalRequest?.let { approval ->
                         removalLauncher.launch(ApplicationRemovalDataSource.createIntent(approval))
+                        viewModel.onApplicationRemovalConfirmationStarted(approval)
                     }
                 }
                 LaunchedEffect(state.platformFileRemovalRequest) {

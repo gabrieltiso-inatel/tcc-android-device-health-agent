@@ -42,6 +42,7 @@ class AgentViewModel(
     private var pollingJob: Job? = null
     private var synchronizationJob: Job? = null
     private var isForeground = false
+    private var applicationRemovalInProgress: PendingApproval? = null
 
     fun setForeground(isForeground: Boolean) {
         this.isForeground = isForeground
@@ -143,7 +144,45 @@ class AgentViewModel(
     }
 
     fun requestApplicationRemoval(approval: PendingApproval) {
-        mutableState.value = mutableState.value.copy(approvalRequest = approval, message = null)
+        if (state.value.isLoading) return
+        mutableState.value = mutableState.value.copy(isLoading = true, message = null)
+        viewModelScope.launch {
+            val review = withContext(ioDispatcher) { repository.reviewApplicationRemoval(approval.actionId) }
+            if (review.getOrNull() == ApplicationRemovalReview.ConfirmationRequired) {
+                mutableState.value = mutableState.value.copy(isLoading = false, approvalRequest = approval)
+            } else {
+                showApprovalOutcome(review.fold({ applicationActionRecorded }, { applicationActionFailed }))
+            }
+        }
+    }
+
+    fun onApplicationRemovalConfirmationStarted(approval: PendingApproval) {
+        applicationRemovalInProgress = approval
+        mutableState.value = mutableState.value.copy(approvalRequest = null)
+    }
+
+    fun handleApplicationRemovalConfirmation(accepted: Boolean) {
+        val approval = applicationRemovalInProgress ?: return
+        applicationRemovalInProgress = null
+        val decision = if (accepted) {
+            ApplicationRemovalDecision.ConfirmationAccepted
+        } else {
+            ApplicationRemovalDecision.ConfirmationDismissed
+        }
+        completeApplicationRemoval(approval, decision)
+    }
+
+    fun cancelApplicationRemoval(approval: PendingApproval) {
+        if (state.value.isLoading) return
+        completeApplicationRemoval(approval, ApplicationRemovalDecision.Declined)
+    }
+
+    private fun completeApplicationRemoval(approval: PendingApproval, decision: ApplicationRemovalDecision) {
+        mutableState.value = mutableState.value.copy(isLoading = true, message = null)
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) { repository.completeApplicationRemoval(approval.actionId, decision) }
+            showApprovalOutcome(result.fold({ applicationActionRecorded }, { applicationActionFailed }))
+        }
     }
 
     fun requestFileRemoval(approval: PendingFileApproval) {
@@ -157,10 +196,6 @@ class AgentViewModel(
 
     fun cancelFileRemoval(approval: PendingFileApproval) {
         completeFileRemoval(approval, false)
-    }
-
-    fun cancelApplicationRemoval(approval: PendingApproval) {
-        completeApplicationRemoval(approval, false)
     }
 
     fun handleFileRemovalResult(approved: Boolean) {
@@ -203,27 +238,15 @@ class AgentViewModel(
         }
     }
 
-    fun handleApplicationRemovalResult(approved: Boolean) {
-        val approval = mutableState.value.approvalRequest ?: return
-        completeApplicationRemoval(approval, approved)
-    }
-
-    private fun completeApplicationRemoval(approval: PendingApproval, approved: Boolean) {
-        if (state.value.isLoading) return
-        mutableState.value = mutableState.value.copy(approvalRequest = null, isLoading = true)
-        viewModelScope.launch {
-            val result = withContext(ioDispatcher) {
-                repository.completeApplicationRemoval(approval.actionId, approved)
-            }
-            loadActionHistory()
-            loadPendingApprovals()
-            loadSnapshots()
-            mutableState.value = mutableState.value.copy(
-                telemetry = repository.readTelemetry(),
-                isLoading = false,
-                message = result.fold({ "Application action recorded" }, { "Could not finish application action" }),
-            )
-        }
+    private suspend fun showApprovalOutcome(message: String) {
+        loadActionHistory()
+        loadPendingApprovals()
+        loadSnapshots()
+        mutableState.value = mutableState.value.copy(
+            telemetry = repository.readTelemetry(),
+            isLoading = false,
+            message = message,
+        )
     }
 
     private fun startPolling() {
@@ -327,6 +350,10 @@ class AgentViewModel(
         }
     }
 
+    private companion object {
+        const val applicationActionRecorded = "Application action recorded"
+        const val applicationActionFailed = "Could not finish application action"
+    }
 }
 
 class AgentViewModelFactory(

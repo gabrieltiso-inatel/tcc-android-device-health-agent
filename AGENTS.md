@@ -44,15 +44,15 @@ Concluído:
 - histórico compartilhado de ações;
 - telemetria, resumo de armazenamento e inventário de aplicativos;
 - inventário inicial de arquivos compartilhados e pastas autorizadas;
-- pareamento, autenticação, retry, expiração e idempotência.
+- pareamento, autenticação, retry, expiração e idempotência;
+- `removeApplication` validado ponta a ponta com validação local antes da confirmação oficial, resultado decidido pelo estado real do pacote e reenvio idempotente.
 
 Próximo:
 
-- validar e ajustar a execução de `removeApplication` com validação local, consentimento explícito e idempotência;
+- melhorar a apresentação e filtragem do histórico;
 
 Depois:
 
-- melhorar a apresentação e filtragem do histórico;
 - validar e ampliar `removeFile` para outras fontes somente através das APIs oficiais e consentimento necessário;
 - ampliar ações de gerenciamento possíveis no agent comum;
 - avaliar capacidades adicionais com Device Owner/Profile Owner.
