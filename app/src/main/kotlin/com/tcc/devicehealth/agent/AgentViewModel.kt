@@ -22,7 +22,7 @@ data class AgentUiState(
     val pairingCode: String = "",
     val controllerAddress: String = "",
     val snapshots: DeviceSnapshots = DeviceSnapshots(),
-    val snapshotError: String? = null,
+    val isShowingSavedReadings: Boolean = false,
     val actions: List<DeviceAction> = emptyList(),
     val pendingApprovals: List<PendingApproval> = emptyList(),
     val pendingFileApprovals: List<PendingFileApproval> = emptyList(),
@@ -30,7 +30,9 @@ data class AgentUiState(
     val fileApprovalRequest: PendingFileApproval? = null,
     val platformFileRemovalRequest: FileRemovalRequest? = null,
     val isLoading: Boolean = false,
-    val message: String? = null,
+    val message: AgentMessage? = null,
+    val displayPreferences: DisplayPreferences = DisplayPreferences(),
+    val permissions: PermissionStatus = PermissionStatus(),
 )
 
 class AgentViewModel(
@@ -71,7 +73,7 @@ class AgentViewModel(
     fun pair() {
         val code = mutableState.value.pairingCode
         if (code.length != 6) {
-            mutableState.value = mutableState.value.copy(message = "Enter the six-digit pairing code")
+            mutableState.value = mutableState.value.copy(message = AgentMessage.EnterPairingCode)
             return
         }
         viewModelScope.launch {
@@ -83,7 +85,7 @@ class AgentViewModel(
                 )
             }
             if (result.isSuccess) {
-                mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = "Device paired")
+                mutableState.value = mutableState.value.copy(isPaired = true, isLoading = false, message = AgentMessage.Paired)
                 loadActionHistory()
                 loadPendingApprovals()
                 loadPendingFileApprovals()
@@ -91,7 +93,7 @@ class AgentViewModel(
             } else {
                 mutableState.value = mutableState.value.copy(
                     isLoading = false,
-                    message = "Pairing failed. Check the controller address and code.",
+                    message = AgentMessage.PairingFailed,
                 )
             }
         }
@@ -125,7 +127,7 @@ class AgentViewModel(
                 telemetry = repository.readTelemetry(),
                 actions = actions,
                 isLoading = false,
-                message = result.fold({ "Action processed. Check pending approvals or history." }, { "Could not finish the request. Check history before trying again." }),
+                message = result.fold({ AgentMessage.RequestProcessed }, { AgentMessage.RequestFailed }),
             )
             loadPendingApprovals()
             loadPendingFileApprovals()
@@ -137,8 +139,8 @@ class AgentViewModel(
         viewModelScope.launch {
             val result = repository.addFileTreeUri(uri)
             mutableState.value = mutableState.value.copy(message = result.fold(
-                { "Folder added. Update files to include it." },
-                { "Could not add the folder. Try again." },
+                { AgentMessage.FolderAdded },
+                { AgentMessage.FolderFailed },
             ))
         }
     }
@@ -151,7 +153,7 @@ class AgentViewModel(
             if (review.getOrNull() == ApplicationRemovalReview.ConfirmationRequired) {
                 mutableState.value = mutableState.value.copy(isLoading = false, approvalRequest = approval)
             } else {
-                showApprovalOutcome(review.fold({ applicationActionRecorded }, { applicationActionFailed }))
+                showApplicationRemovalOutcome(approval, review.isSuccess)
             }
         }
     }
@@ -181,7 +183,7 @@ class AgentViewModel(
         mutableState.value = mutableState.value.copy(isLoading = true, message = null)
         viewModelScope.launch {
             val result = withContext(ioDispatcher) { repository.completeApplicationRemoval(approval.actionId, decision) }
-            showApprovalOutcome(result.fold({ applicationActionRecorded }, { applicationActionFailed }))
+            showApplicationRemovalOutcome(approval, result.isSuccess)
         }
     }
 
@@ -217,7 +219,7 @@ class AgentViewModel(
             mutableState.value = mutableState.value.copy(
                 telemetry = repository.readTelemetry(),
                 isLoading = false,
-                message = result.fold({ if (it != null) "Confirm removal in the Android dialog" else "File action recorded" }, { "Could not finish file action" }),
+                message = result.fold({ if (it != null) AgentMessage.ConfirmInAndroidDialog else AgentMessage.FileActionRecorded }, { AgentMessage.FileActionFailed }),
             )
         }
     }
@@ -234,19 +236,55 @@ class AgentViewModel(
             loadPendingFileApprovals()
             loadSnapshots()
             mutableState.value = mutableState.value.copy(isLoading = false,
-                message = result.fold({ "File action recorded" }, { "Could not finish file action. The result will be retried." }))
+                message = result.fold({ AgentMessage.FileActionRecorded }, { AgentMessage.FileActionWillRetry }))
         }
     }
 
-    private suspend fun showApprovalOutcome(message: String) {
+    private suspend fun showApplicationRemovalOutcome(approval: PendingApproval, succeeded: Boolean) {
+        val applicationName = state.value.snapshots.apps?.apps?.find { it.applicationId == approval.applicationId }?.name
+            ?: approval.applicationId
         loadActionHistory()
         loadPendingApprovals()
         loadSnapshots()
+        val status = state.value.actions.find { it.id == approval.actionId }?.status
         mutableState.value = mutableState.value.copy(
             telemetry = repository.readTelemetry(),
             isLoading = false,
-            message = message,
+            message = when {
+                !succeeded -> AgentMessage.ApplicationActionFailed
+                status != null -> AgentMessage.ApplicationRemovalFinished(applicationName, status)
+                else -> AgentMessage.ApplicationActionRecorded
+            },
         )
+    }
+
+    fun messageShown(message: AgentMessage) {
+        if (state.value.message == message) {
+            mutableState.value = mutableState.value.copy(message = null)
+        }
+    }
+
+    fun updateThemeMode(themeMode: ThemeMode) {
+        saveDisplayPreferences(state.value.displayPreferences.copy(themeMode = themeMode))
+    }
+
+    fun updateLanguage(language: AppLanguage) {
+        saveDisplayPreferences(state.value.displayPreferences.copy(language = language))
+    }
+
+    fun updatePermissions(permissions: PermissionStatus) {
+        mutableState.value = mutableState.value.copy(permissions = permissions)
+    }
+
+    private fun saveDisplayPreferences(displayPreferences: DisplayPreferences) {
+        val previous = state.value.displayPreferences
+        mutableState.value = mutableState.value.copy(displayPreferences = displayPreferences)
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) { repository.saveDisplayPreferences(displayPreferences) }
+            if (result.isFailure) {
+                mutableState.value = mutableState.value.copy(displayPreferences = previous, message = AgentMessage.PreferencesFailed)
+            }
+        }
     }
 
     private fun startPolling() {
@@ -266,7 +304,7 @@ class AgentViewModel(
                     loadSnapshots()
                     mutableState.value = mutableState.value.copy(
                         telemetry = repository.readTelemetry(),
-                        message = "$processedCount action(s) processed",
+                        message = AgentMessage.ActionsProcessed(processedCount),
                     )
                 }
                 delay(schedule.nextDelayMillis(result.isSuccess))
@@ -309,6 +347,7 @@ class AgentViewModel(
             val telemetry = repository.readTelemetry()
             val isPaired = repository.isPaired()
             mutableState.value = mutableState.value.copy(
+                displayPreferences = repository.getDisplayPreferences(),
                 telemetry = telemetry,
                 isReady = true,
                 isPaired = isPaired,
@@ -333,7 +372,7 @@ class AgentViewModel(
         val result = repository.getSnapshots()
         mutableState.value = mutableState.value.copy(
             snapshots = result.getOrDefault(state.value.snapshots),
-            snapshotError = if (result.isFailure) "Could not refresh saved readings. Showing the last available data." else null,
+            isShowingSavedReadings = result.isFailure,
         )
         return result.map { Unit }
     }
@@ -348,11 +387,6 @@ class AgentViewModel(
         repository.getPendingFileApprovals().getOrNull()?.let { approvals ->
             mutableState.value = mutableState.value.copy(pendingFileApprovals = approvals)
         }
-    }
-
-    private companion object {
-        const val applicationActionRecorded = "Application action recorded"
-        const val applicationActionFailed = "Could not finish application action"
     }
 }
 

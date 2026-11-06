@@ -21,7 +21,7 @@ class AgentScreenTest {
         compose.onNodeWithText("Apps", useUnmergedTree = true).performClick()
 
         compose.onNodeWithText("Device Health Agent").assertIsDisplayed()
-        compose.onNodeWithText("Removal unavailable").assertIsDisplayed()
+        compose.onNodeWithText("Protected").assertIsDisplayed()
         compose.onNodeWithText("Remove", substring = false).assertDoesNotExist()
     }
 
@@ -31,7 +31,7 @@ class AgentScreenTest {
         val approval = PendingFileApproval("file-action", "file", "revision", "Family notes.txt")
         showAgent(AgentUiState(isReady = true, isPaired = true, pendingFileApprovals = listOf(approval)), onDeclineFile = { declined = it.actionId })
 
-        compose.onNodeWithText("Pending (1)", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Approvals", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Remove Family notes.txt?").assertIsDisplayed()
         compose.onNodeWithText("Decline").performClick()
 
