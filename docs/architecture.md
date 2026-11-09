@@ -67,6 +67,18 @@ usuário toca em uma ação
 → histórico compartilhado é atualizado
 ```
 
+### Remoção de aplicação
+
+```text
+removeApplication é recebido
+→ agent valida aplicação e versão e registra awaiting_approval
+→ usuário revisa: agent valida novamente antes da confirmação oficial do Android
+→ resultado é decidido pelo estado real do pacote após a confirmação
+→ resultado final é persistido, enviado e o inventário é sincronizado
+```
+
+Cancelar na lista de pendências registra `approval_declined` sem abrir a confirmação do Android. Se a aplicação já não existir na revisão, o resultado é `already_absent`.
+
 ## Invariantes
 
 - coletores não decidem se algo deve entrar no histórico;
@@ -81,7 +93,8 @@ usuário toca em uma ação
 - toda ação destrutiva exige iniciativa explícita;
 - rede e armazenamento nunca devem bloquear a thread principal;
 - tokens e dados sensíveis não devem aparecer em logs;
-- uma ação redeliverada reutiliza o resultado persistido em vez de repetir seu efeito.
+- uma ação redeliverada reutiliza o resultado persistido em vez de repetir seu efeito;
+- um resultado final já persistido é reenviado sem nova execução; um conflito do controlador encerra a pendência local.
 
 ## Limites entre camadas
 

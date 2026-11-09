@@ -60,7 +60,51 @@ class AgentViewModelTest {
         viewModel.cancelApplicationRemoval(PendingApproval("app-action", "app", 7))
         runCurrent()
 
-        assertEquals("app-action" to false, repository.applicationDecision)
+        assertEquals("app-action" to ApplicationRemovalDecision.Declined, repository.applicationDecision)
+    }
+
+    @Test
+    fun reviewingAValidApplicationOpensTheAndroidConfirmation() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+        val approval = PendingApproval("app-action", "app", 7)
+
+        viewModel.requestApplicationRemoval(approval)
+        runCurrent()
+
+        assertEquals(approval, viewModel.state.value.approvalRequest)
+        assertNull(repository.applicationDecision)
+    }
+
+    @Test
+    fun reviewThatAlreadyFinishedTheRemovalDoesNotOpenTheAndroidConfirmation() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository(review = ApplicationRemovalReview.Completed)
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+
+        viewModel.requestApplicationRemoval(PendingApproval("app-action", "app", 7))
+        runCurrent()
+
+        assertNull(viewModel.state.value.approvalRequest)
+        assertEquals("app-action", repository.reviewedActionId)
+    }
+
+    @Test
+    fun androidConfirmationResultIsRecordedForTheStartedApproval() = runTest(dispatcher) {
+        val repository = FakeDeviceHealthRepository()
+        val viewModel = AgentViewModel(repository, dispatcher)
+        runCurrent()
+        val approval = PendingApproval("app-action", "app", 7)
+        viewModel.requestApplicationRemoval(approval)
+        runCurrent()
+
+        viewModel.onApplicationRemovalConfirmationStarted(approval)
+        viewModel.handleApplicationRemovalConfirmation(accepted = true)
+        runCurrent()
+
+        assertNull(viewModel.state.value.approvalRequest)
+        assertEquals("app-action" to ApplicationRemovalDecision.ConfirmationAccepted, repository.applicationDecision)
     }
 
     @Test
@@ -110,10 +154,13 @@ class AgentViewModelTest {
     }
 }
 
-private class FakeDeviceHealthRepository : DeviceHealthRepository {
+private class FakeDeviceHealthRepository(
+    private val review: ApplicationRemovalReview = ApplicationRemovalReview.ConfirmationRequired,
+) : DeviceHealthRepository {
     var platformDecision: Triple<String, Boolean, Boolean>? = null
     var fileDecision: Pair<String, Boolean>? = null
-    var applicationDecision: Pair<String, Boolean>? = null
+    var applicationDecision: Pair<String, ApplicationRemovalDecision>? = null
+    var reviewedActionId: String? = null
     var request: DeviceAction? = null
     val snapshots = DeviceSnapshots(storage = StorageSummary(100, 40, 60, "2026-10-31T12:00:00Z"))
 
@@ -148,8 +195,13 @@ private class FakeDeviceHealthRepository : DeviceHealthRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit> {
-        applicationDecision = actionId to approved
+    override suspend fun reviewApplicationRemoval(actionId: String): Result<ApplicationRemovalReview> {
+        reviewedActionId = actionId
+        return Result.success(review)
+    }
+
+    override suspend fun completeApplicationRemoval(actionId: String, decision: ApplicationRemovalDecision): Result<Unit> {
+        applicationDecision = actionId to decision
         return Result.success(Unit)
     }
 }

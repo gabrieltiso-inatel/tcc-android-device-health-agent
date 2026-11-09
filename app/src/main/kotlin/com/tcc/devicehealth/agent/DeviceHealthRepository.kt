@@ -23,7 +23,8 @@ interface DeviceHealthRepository {
     ): Result<Unit>
     suspend fun getPendingApprovals(): Result<List<PendingApproval>>
     suspend fun getPendingFileApprovals(): Result<List<PendingFileApproval>>
-    suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit>
+    suspend fun reviewApplicationRemoval(actionId: String): Result<ApplicationRemovalReview>
+    suspend fun completeApplicationRemoval(actionId: String, decision: ApplicationRemovalDecision): Result<Unit>
     suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<FileRemovalRequest?>
     suspend fun completePlatformFileRemoval(actionId: String, approved: Boolean, launchFailed: Boolean = false): Result<Unit>
     suspend fun getActionHistory(): Result<List<DeviceAction>>
@@ -128,68 +129,65 @@ class AndroidDeviceHealthRepository(
     }
 
     override suspend fun getPendingApprovals(): Result<List<PendingApproval>> = runCatching {
-        preferences.getPendingApprovals()
+        preferences.getPendingApprovals().filter { approval -> finalActionResult(approval.actionId) == null }
     }
 
     override suspend fun getPendingFileApprovals(): Result<List<PendingFileApproval>> = runCatching {
-        preferences.getPendingFileApprovals()
+        preferences.getPendingFileApprovals().filter { approval -> finalActionResult(approval.actionId) == null }
     }
 
-    override suspend fun completeApplicationRemoval(actionId: String, approved: Boolean): Result<Unit> = runCatching {
-        val approval = preferences.getPendingApprovals().firstOrNull { pending -> pending.actionId == actionId }
-            ?: error("Application removal approval is no longer pending")
-        val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
-        val result = previous ?: if (!approved) {
-            StoredActionResult(
-                succeeded = false,
-                status = "cancelled",
-                message = "Application removal cancelled",
-                errorCode = "approval_declined",
-            )
-        } else if (applicationRemovalDataSource.isRemoved(approval)) {
-            StoredActionResult(
-                succeeded = true,
-                status = "completed",
-                message = "Application was already absent",
-                errorCode = "already_absent",
-            )
+    override suspend fun reviewApplicationRemoval(actionId: String): Result<ApplicationRemovalReview> = runCatching {
+        val approval = requirePendingApproval(actionId)
+        val result = finalActionResult(actionId) ?: applicationRemovalReviewResult(
+            isRemoved = applicationRemovalDataSource.isRemoved(approval),
+            validationFailure = runCatching { applicationRemovalDataSource.validate(approval) }.exceptionOrNull(),
+        )
+        if (result == null) {
+            ApplicationRemovalReview.ConfirmationRequired
         } else {
-            try {
-                applicationRemovalDataSource.validate(approval)
-                if (applicationRemovalDataSource.isRemoved(approval)) {
-                    StoredActionResult(
-                        succeeded = true,
-                        status = "completed",
-                        message = "Application removed",
-                        errorCode = "application_removed",
-                    )
-                } else {
-                    StoredActionResult(
-                        succeeded = false,
-                        status = "failed",
-                        message = "Application removal failed",
-                        errorCode = "execution_failed",
-                    )
-                }
-            } catch (error: ApplicationNotFoundException) {
-                StoredActionResult(false, "Application is no longer installed", "failed", "application_not_found")
-            } catch (error: ApplicationChangedException) {
-                StoredActionResult(false, "Application changed since it was selected", "failed", "application_changed")
-            } catch (error: ApplicationNotAllowedException) {
-                StoredActionResult(false, "Application cannot be removed", "failed", "not_allowed")
+            finishApplicationRemoval(approval, result)
+            ApplicationRemovalReview.Completed
+        }
+    }
+
+    override suspend fun completeApplicationRemoval(actionId: String, decision: ApplicationRemovalDecision): Result<Unit> = runCatching {
+        val approval = requirePendingApproval(actionId)
+        val result = finalActionResult(actionId) ?: applicationRemovalDecisionResult(
+            decision = decision,
+            isRemoved = applicationRemovalDataSource.isRemoved(approval),
+        )
+        finishApplicationRemoval(approval, result)
+    }
+
+    private suspend fun finishApplicationRemoval(approval: PendingApproval, result: StoredActionResult) {
+        preferences.saveActionResult(approval.actionId, result)
+        sendFinalActionResult(approval.actionId, result, requireToken())
+        preferences.removePendingApproval(approval.actionId)
+        approvalNotificationDataSource.cancel(approval.actionId)
+        syncAppInventory().getOrThrow()
+    }
+
+    private suspend fun requirePendingApproval(actionId: String): PendingApproval =
+        preferences.getPendingApprovals().firstOrNull { pending -> pending.actionId == actionId }
+            ?: error("Application removal approval is no longer pending")
+
+    private suspend fun finalActionResult(actionId: String): StoredActionResult? =
+        preferences.getActionResult(actionId)?.takeIf { result -> result.status != "awaiting_approval" }
+
+    private suspend fun sendFinalActionResult(actionId: String, result: StoredActionResult, token: String) {
+        try {
+            controllerClient.sendActionResult(actionId, result, token)
+        } catch (error: ControllerResponseException) {
+            if (error.statusCode != HTTP_CONFLICT) {
+                throw error
             }
         }
-        preferences.saveActionResult(actionId, result)
-        controllerClient.sendActionResult(actionId, result, requireToken())
-        preferences.removePendingApproval(actionId)
-        approvalNotificationDataSource.cancel(actionId)
-        syncAppInventory().getOrThrow()
     }
 
     override suspend fun completeFileRemoval(actionId: String, approved: Boolean): Result<FileRemovalRequest?> = runCatching {
         val approval = preferences.getPendingFileApprovals().firstOrNull { pending -> pending.actionId == actionId }
             ?: error("File removal approval is no longer pending")
-        val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
+        val previous = finalActionResult(actionId)
         val result = previous ?: if (!approved) {
             StoredActionResult(false, "File removal cancelled", "cancelled", "approval_declined")
         } else {
@@ -223,7 +221,7 @@ class AndroidDeviceHealthRepository(
         val approval = preferences.getPendingFileApprovals().firstOrNull { it.actionId == actionId }
             ?: return@runCatching
         check(approval.platformRequestStarted && approval.mediaUri != null)
-        val previous = preferences.getActionResult(actionId)?.takeUnless { it.status == "awaiting_approval" }
+        val previous = finalActionResult(actionId)
         val result = previous ?: if (launchFailed) {
             StoredActionResult(false, "Could not open the system confirmation", "failed", "execution_failed")
         } else if (!approved) {
@@ -246,23 +244,22 @@ class AndroidDeviceHealthRepository(
         val actionId = approval.actionId
         preferences.saveActionResult(actionId, result)
         syncFileInventory().getOrThrow()
-        controllerClient.sendActionResult(actionId, result, requireToken())
+        sendFinalActionResult(actionId, result, requireToken())
         preferences.removePendingFileApproval(actionId)
         approvalNotificationDataSource.cancel(actionId)
     }
 
     private suspend fun resendCompletedApprovalResults(token: String) {
         preferences.getPendingApprovals().forEach { approval ->
-            val result = preferences.getActionResult(approval.actionId)
-            if (result != null && result.status != "awaiting_approval") {
-                controllerClient.sendActionResult(approval.actionId, result, token)
+            finalActionResult(approval.actionId)?.let { result ->
+                sendFinalActionResult(approval.actionId, result, token)
                 preferences.removePendingApproval(approval.actionId)
                 approvalNotificationDataSource.cancel(approval.actionId)
             }
         }
         preferences.getPendingFileApprovals().forEach { approval ->
-            val result = preferences.getActionResult(approval.actionId)
-            if (result != null && result.status != "awaiting_approval") {
+            val result = finalActionResult(approval.actionId)
+            if (result != null) {
                 recordFileResult(approval, result)
             } else if (approval.platformRequestStarted && approval.mediaUri != null) {
                 val absent = try {
@@ -332,5 +329,9 @@ class AndroidDeviceHealthRepository(
 
     private suspend fun requireToken(): String = checkNotNull(preferences.getToken()) {
         "Device is not paired"
+    }
+
+    private companion object {
+        const val HTTP_CONFLICT = 409
     }
 }
