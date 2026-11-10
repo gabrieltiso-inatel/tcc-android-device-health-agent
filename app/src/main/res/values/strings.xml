@@ -57,6 +57,11 @@
     <string name="remove">Remove</string>
     <string name="read_only">Read only</string>
     <string name="search_no_results">Nothing matches your search.</string>
+    <string name="apps_none">No apps</string>
+    <string name="apps_empty_inventory">No user-installed apps were found on this phone.</string>
+    <string name="files_none">No files</string>
+    <string name="files_empty_sources">The authorized folders and media have no files yet.</string>
+    <string name="permission_folders_none">No folders yet</string>
 
     <string name="files_title">Files</string>
     <plurals name="files_count">
@@ -206,8 +211,15 @@
     <string name="message_paired">Phone connected.</string>
     <string name="message_pairing_failed">Could not connect. Check the address and the code.</string>
     <string name="message_request_processed">Request sent.</string>
+    <string name="message_battery_updated">Battery reading updated.</string>
+    <string name="message_storage_updated">Storage reading updated.</string>
+    <string name="message_apps_updated">App list updated.</string>
+    <string name="message_files_updated">File list updated.</string>
+    <string name="message_removal_requested">Removal requested. Review it in Approvals.</string>
+    <string name="message_media_granted">Media access allowed. File list updated.</string>
+    <string name="message_media_denied">Media access was not allowed. You can change this in the Android settings.</string>
     <string name="message_request_failed">Could not send the request. Check History before trying again.</string>
-    <string name="message_folder_added">Folder added. Refresh files to include it.</string>
+    <string name="message_folder_added">Folder added. File list updated.</string>
     <string name="message_folder_failed">Could not add the folder.</string>
     <string name="message_confirm_android">Confirm the removal in the Android dialog.</string>
     <string name="message_file_recorded">File decision recorded.</string>

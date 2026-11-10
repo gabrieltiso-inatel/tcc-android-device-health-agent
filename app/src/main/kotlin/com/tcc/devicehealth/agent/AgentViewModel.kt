@@ -111,7 +111,20 @@ class AgentViewModel(
         executeAction("removeFile", null, file)
     }
 
-    private fun executeAction(type: String, app: InstalledApp?, file: FileItem?) {
+    fun onMediaAccessResult(granted: Boolean) {
+        if (granted) {
+            executeAction("collectFileInventory", null, null, AgentMessage.MediaAccessGranted)
+        } else {
+            mutableState.value = mutableState.value.copy(message = AgentMessage.MediaAccessDenied)
+        }
+    }
+
+    private fun executeAction(
+        type: String,
+        app: InstalledApp?,
+        file: FileItem?,
+        successMessage: AgentMessage = AgentMessage.ActionFinished(type),
+    ) {
         if (state.value.isLoading) return
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isLoading = true, message = null)
@@ -127,7 +140,7 @@ class AgentViewModel(
                 telemetry = repository.readTelemetry(),
                 actions = actions,
                 isLoading = false,
-                message = result.fold({ AgentMessage.RequestProcessed }, { AgentMessage.RequestFailed }),
+                message = result.fold({ successMessage }, { AgentMessage.RequestFailed }),
             )
             loadPendingApprovals()
             loadPendingFileApprovals()
@@ -138,10 +151,11 @@ class AgentViewModel(
     fun addFileTreeUri(uri: String) {
         viewModelScope.launch {
             val result = repository.addFileTreeUri(uri)
-            mutableState.value = mutableState.value.copy(message = result.fold(
-                { AgentMessage.FolderAdded },
-                { AgentMessage.FolderFailed },
-            ))
+            if (result.isSuccess) {
+                executeAction("collectFileInventory", null, null, AgentMessage.FolderAdded)
+            } else {
+                mutableState.value = mutableState.value.copy(message = AgentMessage.FolderFailed)
+            }
         }
     }
 

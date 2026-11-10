@@ -391,7 +391,7 @@ private fun AppsTab(state: AgentUiState, onExecuteAction: (String) -> Unit, onRe
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader(
             stringResource(R.string.apps_title),
-            inventory?.let { quantityText(R.plurals.apps_count, it.apps.size) + " · " + stringResource(R.string.updated_at, relativeTimeText(it.capturedAt)) }
+            inventory?.let { countText(R.plurals.apps_count, R.string.apps_none, it.apps.size) + " · " + stringResource(R.string.updated_at, relativeTimeText(it.capturedAt)) }
                 ?: stringResource(R.string.apps_waiting),
         ) { RefreshIconButton(stringResource(R.string.refresh_apps), "collectAppInventory", state, onExecuteAction) }
         Text(stringResource(R.string.apps_description), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -400,7 +400,7 @@ private fun AppsTab(state: AgentUiState, onExecuteAction: (String) -> Unit, onRe
             page = 0
         }
         if (apps.isEmpty()) {
-            EmptyState(stringResource(R.string.apps_empty_title), stringResource(if (inventory == null) R.string.apps_waiting else R.string.search_no_results))
+            EmptyState(stringResource(R.string.apps_empty_title), stringResource(emptyListMessage(inventory == null, query, R.string.apps_waiting, R.string.apps_empty_inventory)))
         } else {
             SurfaceCard {
                 apps.drop(currentPage * listPageSize).take(listPageSize).forEachIndexed { index, app ->
@@ -435,7 +435,7 @@ private fun FilesTab(state: AgentUiState, onCollect: () -> Unit, onSelectFolder:
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader(
             stringResource(R.string.files_title),
-            inventory?.let { quantityText(R.plurals.files_count, it.files.size) + " · " + stringResource(R.string.updated_at, relativeTimeText(it.capturedAt)) }
+            inventory?.let { countText(R.plurals.files_count, R.string.files_none, it.files.size) + " · " + stringResource(R.string.updated_at, relativeTimeText(it.capturedAt)) }
                 ?: stringResource(R.string.files_waiting),
         ) {
             IconButton(onClick = onCollect, enabled = !state.isLoading && !collecting) {
@@ -458,7 +458,7 @@ private fun FilesTab(state: AgentUiState, onCollect: () -> Unit, onSelectFolder:
             page = 0
         }
         if (files.isEmpty()) {
-            EmptyState(stringResource(R.string.files_empty_title), stringResource(if (inventory == null) R.string.files_waiting else R.string.search_no_results))
+            EmptyState(stringResource(R.string.files_empty_title), stringResource(emptyListMessage(inventory == null, query, R.string.files_waiting, R.string.files_empty_sources)))
         } else {
             SurfaceCard {
                 files.drop(currentPage * listPageSize).take(listPageSize).forEachIndexed { index, file ->
@@ -616,7 +616,9 @@ private fun messageText(message: AgentMessage): String = when (message) {
     AgentMessage.EnterPairingCode -> stringResource(R.string.message_enter_code)
     AgentMessage.Paired -> stringResource(R.string.message_paired)
     AgentMessage.PairingFailed -> stringResource(R.string.message_pairing_failed)
-    AgentMessage.RequestProcessed -> stringResource(R.string.message_request_processed)
+    AgentMessage.MediaAccessGranted -> stringResource(R.string.message_media_granted)
+    AgentMessage.MediaAccessDenied -> stringResource(R.string.message_media_denied)
+    is AgentMessage.ActionFinished -> stringResource(actionFinishedMessage(message.type))
     AgentMessage.RequestFailed -> stringResource(R.string.message_request_failed)
     AgentMessage.FolderAdded -> stringResource(R.string.message_folder_added)
     AgentMessage.FolderFailed -> stringResource(R.string.message_folder_failed)

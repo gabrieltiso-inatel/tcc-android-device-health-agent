@@ -152,4 +152,7 @@ internal fun relativeTimeText(value: String): String {
 internal fun bytesText(bytes: Long): String = formatBytes(bytes, LocalConfiguration.current.locales[0])
 
 @Composable
+internal fun countText(id: Int, zeroId: Int, count: Int): String = if (count == 0) stringResource(zeroId) else quantityText(id, count)
+
+@Composable
 internal fun quantityText(id: Int, count: Int): String = LocalContext.current.resources.getQuantityString(id, count, count)

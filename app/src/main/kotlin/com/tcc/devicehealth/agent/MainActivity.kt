@@ -96,9 +96,9 @@ class MainActivity : ComponentActivity() {
                 }
                 val mediaPermissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions(),
-                ) {
+                ) { results ->
                     refreshPermissions()
-                    viewModel.executeAction("collectFileInventory")
+                    viewModel.onMediaAccessResult(results.values.any { it })
                 }
                 LaunchedEffect(state.approvalRequest) {
                     state.approvalRequest?.let { approval ->
