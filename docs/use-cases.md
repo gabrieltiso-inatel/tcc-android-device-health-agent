@@ -56,6 +56,13 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - compartilhar a mesma fonte de verdade com a interface web.
 - filtrar por estado e navegar em páginas de 20 entradas.
 
+### Configurar o agent
+
+- escolher tema claro, escuro ou igual ao sistema;
+- escolher idioma português, inglês ou igual ao sistema;
+- consultar e solicitar as permissões de notificações e mídia, e escolher pastas autorizadas;
+- consultar endereço do painel, situação da conexão e versão do app.
+
 ### Remover aplicação
 
 - validar a aplicação e a versão no momento da ação e novamente antes da confirmação;

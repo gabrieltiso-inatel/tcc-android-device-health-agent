@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Device Health Agent</string>
+    <string name="app_brand">DEVICE HEALTH</string>
+    <string name="this_device">Este aparelho</string>
+
+    <string name="tab_home">Início</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_files">Arquivos</string>
+    <string name="tab_approvals">Aprovações</string>
+    <string name="tab_history">Histórico</string>
+
+    <string name="health_good_title">Tudo certo</string>
+    <string name="health_good_message">Bateria, armazenamento e aprovações não precisam de atenção.</string>
+    <string name="health_attention_title">Precisa da sua atenção</string>
+    <plurals name="health_approvals_message">
+        <item quantity="one">%d remoção aguarda a sua aprovação.</item>
+        <item quantity="other">%d remoções aguardam a sua aprovação.</item>
+    </plurals>
+    <string name="health_low_battery_title">Bateria fraca</string>
+    <string name="health_low_battery_message">Conecte o carregador para manter o aparelho disponível.</string>
+    <string name="health_storage_title">Armazenamento quase cheio</string>
+    <string name="health_storage_message">Revise arquivos grandes e apps que você não usa mais.</string>
+    <string name="health_saved_title">Exibindo leituras salvas</string>
+    <string name="health_saved_message">Não foi possível falar com o painel. As leituras serão atualizadas automaticamente.</string>
+    <string name="last_sync">Última leitura %1$s</string>
+    <string name="review_approvals">Revisar aprovações</string>
+
+    <string name="battery_title">Bateria</string>
+    <string name="battery_charging">Carregando</string>
+    <string name="battery_not_charging">Fora da tomada</string>
+    <string name="storage_title">Armazenamento</string>
+    <string name="storage_used_free_of">%1$s livres de %2$s</string>
+    <string name="no_reading_yet">Ainda sem leitura</string>
+    <string name="refresh_battery">Atualizar leitura da bateria</string>
+    <string name="refresh_storage">Atualizar leitura do armazenamento</string>
+    <string name="refresh_apps">Atualizar lista de apps</string>
+    <string name="refresh_files">Atualizar lista de arquivos</string>
+    <string name="updated_at">atualizado %1$s</string>
+
+    <string name="recent_activity">Atividade recente</string>
+    <string name="see_all">Ver tudo</string>
+    <string name="no_activity">Pedidos feitos neste celular ou pelo painel aparecem aqui.</string>
+
+    <string name="apps_title">Apps instalados</string>
+    <plurals name="apps_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="apps_description">Apps que você instalou. Remover um app sempre pede a sua aprovação.</string>
+    <string name="apps_waiting">Aguardando a primeira lista de apps.</string>
+    <string name="apps_empty_title">Nenhum app para mostrar</string>
+    <string name="search_apps">Buscar apps</string>
+    <string name="version">Versão %1$s</string>
+    <string name="removal_unavailable">Protegido</string>
+    <string name="removal_in_progress">Aguardando…</string>
+    <string name="remove">Remover</string>
+    <string name="read_only">Somente leitura</string>
+    <string name="search_no_results">Nada corresponde à sua busca.</string>
+    <string name="apps_none">Nenhum app</string>
+    <string name="apps_empty_inventory">Nenhum app instalado pelo usuário foi encontrado neste celular.</string>
+    <string name="files_none">Nenhum arquivo</string>
+    <string name="files_empty_sources">As pastas e mídias autorizadas ainda não têm arquivos.</string>
+    <string name="permission_folders_none">Nenhuma pasta ainda</string>
+
+    <string name="files_title">Arquivos</string>
+    <plurals name="files_count">
+        <item quantity="one">%d arquivo</item>
+        <item quantity="other">%d arquivos</item>
+    </plurals>
+    <string name="files_waiting">Autorize uma pasta ou o acesso à mídia e atualize.</string>
+    <string name="files_description">Só nomes, tamanhos e datas são compartilhados. O conteúdo dos arquivos nunca sai deste celular.</string>
+    <string name="file_access_title">Acesso a arquivos</string>
+    <string name="files_empty_title">Nenhum arquivo para mostrar</string>
+    <string name="search_files">Buscar arquivos</string>
+    <string name="choose_folder">Escolher pasta</string>
+    <string name="media_access">Acesso à mídia</string>
+    <string name="file_kind_image">Imagem</string>
+    <string name="file_kind_video">Vídeo</string>
+    <string name="file_kind_audio">Áudio</string>
+    <string name="file_kind_document">Documento</string>
+    <string name="file_kind_other">Arquivo</string>
+    <string name="authorization_available">Acesso permitido</string>
+    <string name="authorization_requires_consent">Acesso ainda não permitido</string>
+    <string name="authorization_unavailable">Acesso não está mais disponível</string>
+    <string name="authorization_other">Acesso desconhecido</string>
+    <string name="file_previously_selected">o arquivo selecionado anteriormente</string>
+
+    <string name="approvals_title">Aprovações</string>
+    <string name="approvals_description">Nada é removido sem a sua confirmação.</string>
+    <string name="approvals_empty_title">Nada pendente</string>
+    <string name="approvals_empty_message">Pedidos que precisam da sua aprovação aparecem aqui.</string>
+    <string name="approval_remove_title">Remover %1$s?</string>
+    <string name="approval_app_message">O Android vai pedir a sua confirmação antes de remover o app.</string>
+    <string name="approval_file_message">Você vai confirmar mais uma vez antes de o arquivo ser removido.</string>
+    <string name="requested_from_controller">Pedido pelo painel %1$s</string>
+    <string name="requested_on_device">Pedido neste celular %1$s</string>
+    <string name="review">Revisar</string>
+    <string name="decline">Recusar</string>
+
+    <string name="history_title">Histórico</string>
+    <string name="history_description">Ações pedidas neste celular ou pelo painel.</string>
+    <string name="history_empty_title">Nenhuma ação encontrada</string>
+    <string name="history_empty_message">Leituras automáticas não entram no histórico.</string>
+    <string name="filter_all">Todas</string>
+    <string name="filter_active">Em andamento</string>
+
+    <string name="action_collect_telemetry">Leitura da bateria</string>
+    <string name="action_collect_storage">Leitura do armazenamento</string>
+    <string name="action_collect_apps">Lista de apps</string>
+    <string name="action_collect_files">Lista de arquivos</string>
+    <string name="action_remove_application">Remoção de app</string>
+    <string name="action_remove_file">Remoção de arquivo</string>
+    <string name="action_other">Ação</string>
+    <string name="status_pending">Na fila</string>
+    <string name="status_delivered">Enviado ao celular</string>
+    <string name="status_awaiting_approval">Aguardando aprovação</string>
+    <string name="status_completed">Concluída</string>
+    <string name="status_cancelled">Recusada</string>
+    <string name="status_failed">Falhou</string>
+    <string name="status_expired">Expirada</string>
+    <string name="status_unknown">Desconhecido</string>
+    <string name="origin_device">Este celular</string>
+    <string name="origin_controller">Painel</string>
+    <string name="result_application_removed">App removido</string>
+    <string name="result_application_absent">O app já tinha sido removido</string>
+    <string name="result_application_cancelled">Remoção recusada</string>
+    <string name="result_application_failed">Não foi possível remover o app</string>
+    <string name="result_application_not_found">O app não está mais instalado</string>
+    <string name="result_application_changed">O app foi atualizado depois de ser escolhido</string>
+    <string name="result_application_not_allowed">Este app não pode ser removido</string>
+    <string name="result_file_removed">Arquivo removido</string>
+    <string name="result_file_cancelled">Remoção recusada</string>
+    <string name="result_file_not_found">O arquivo não está mais disponível</string>
+    <string name="result_file_changed">O arquivo mudou depois de ser escolhido</string>
+    <string name="result_file_not_allowed">Este arquivo não pode ser removido</string>
+    <string name="result_file_access_revoked">O acesso a este arquivo foi revogado</string>
+    <string name="result_timed_out">O celular não respondeu a tempo</string>
+    <string name="result_file_failed">Não foi possível remover o arquivo</string>
+    <string name="result_confirmation_failed">Não foi possível abrir a confirmação do Android</string>
+    <string name="result_requires_approval">Aguardando a sua aprovação</string>
+    <string name="result_telemetry_sent">Leitura enviada</string>
+    <string name="result_collected">Lista atualizada</string>
+    <string name="result_not_supported">Não suportado neste celular</string>
+    <string name="result_execution_failed">Algo deu errado no celular</string>
+
+    <string name="time_just_now">agora mesmo</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">há %d minuto</item>
+        <item quantity="other">há %d minutos</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">há %d hora</item>
+        <item quantity="other">há %d horas</item>
+    </plurals>
+    <plurals name="time_days_ago">
+        <item quantity="one">há %d dia</item>
+        <item quantity="other">há %d dias</item>
+    </plurals>
+    <string name="page_previous">Anterior</string>
+    <string name="page_next">Próxima</string>
+    <string name="page_range">%1$d–%2$d de %3$d</string>
+
+    <string name="pairing_title">Conectar este celular</string>
+    <string name="pairing_description">No computador, abra o painel e escolha Adicionar aparelho. Depois informe aqui o endereço e o código de 6 dígitos mostrado lá.</string>
+    <string name="controller_address">Endereço do painel</string>
+    <string name="controller_address_hint">Por exemplo http://192.168.0.10:3000</string>
+    <string name="pairing_code">Código de pareamento</string>
+    <string name="pairing_code_hint">O código expira 5 minutos depois de criado.</string>
+    <string name="connect">Conectar</string>
+    <string name="connecting">Conectando…</string>
+    <string name="saved_readings_notice">Não foi possível falar com o painel. Exibindo as últimas leituras salvas.</string>
+
+    <string name="request_removal_title">Pedir remoção?</string>
+    <string name="request_removal_message">%1$s só será removido depois que você revisar e confirmar.</string>
+    <string name="request_removal">Pedir remoção</string>
+    <string name="cancel">Cancelar</string>
+    <string name="back">Voltar</string>
+    <string name="file_confirm_title">Remover arquivo?</string>
+    <string name="file_confirm_message">%1$s será removido definitivamente deste celular.</string>
+
+    <string name="settings_title">Configurações</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Igual ao sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Escuro</string>
+    <string name="settings_language">Idioma</string>
+    <string name="language_system">Igual ao sistema</string>
+    <string name="language_portuguese">Português (Brasil)</string>
+    <string name="language_english">English</string>
+    <string name="settings_permissions">Permissões</string>
+    <string name="settings_permissions_description">O que este app pode acessar neste celular.</string>
+    <string name="permission_notifications">Notificações</string>
+    <string name="permission_notifications_description">Avisa quando uma remoção precisa da sua aprovação.</string>
+    <string name="permission_media">Fotos, vídeos e áudios</string>
+    <string name="permission_media_description">Lista as mídias para você encontrar arquivos grandes.</string>
+    <string name="permission_folders">Pastas autorizadas</string>
+    <plurals name="permission_folders_count">
+        <item quantity="one">%d pasta</item>
+        <item quantity="other">%d pastas</item>
+    </plurals>
+    <string name="permission_allow">Permitir</string>
+    <string name="permission_granted">Permitido</string>
+    <string name="settings_connection">Conexão</string>
+    <string name="connection_status">Situação</string>
+    <string name="connection_ok">Conectado ao painel</string>
+    <string name="connection_saved">Painel inacessível</string>
+    <string name="agent_version">Versão do app</string>
+
+    <string name="message_enter_code">Informe o código de pareamento de 6 dígitos.</string>
+    <string name="message_paired">Celular conectado.</string>
+    <string name="message_pairing_failed">Não foi possível conectar. Confira o endereço e o código.</string>
+    <string name="message_request_processed">Pedido enviado.</string>
+    <string name="message_battery_updated">Leitura da bateria atualizada.</string>
+    <string name="message_storage_updated">Leitura do armazenamento atualizada.</string>
+    <string name="message_apps_updated">Lista de apps atualizada.</string>
+    <string name="message_files_updated">Lista de arquivos atualizada.</string>
+    <string name="message_removal_requested">Remoção pedida. Revise em Aprovações.</string>
+    <string name="message_media_granted">Acesso à mídia permitido. Lista de arquivos atualizada.</string>
+    <string name="message_media_denied">O acesso à mídia não foi permitido. Você pode mudar isso nas configurações do Android.</string>
+    <string name="message_request_failed">Não foi possível enviar o pedido. Confira o Histórico antes de tentar de novo.</string>
+    <string name="message_folder_added">Pasta adicionada. Lista de arquivos atualizada.</string>
+    <string name="message_folder_failed">Não foi possível adicionar a pasta.</string>
+    <string name="message_confirm_android">Confirme a remoção na janela do Android.</string>
+    <string name="message_file_recorded">Decisão sobre o arquivo registrada.</string>
+    <string name="message_file_failed">Não foi possível concluir a ação no arquivo.</string>
+    <string name="message_file_retry">Não foi possível concluir a ação no arquivo. Ela será tentada de novo.</string>
+    <string name="message_app_recorded">Decisão sobre o app registrada.</string>
+    <string name="message_app_failed">Não foi possível concluir a ação no app. Ela será tentada de novo.</string>
+    <string name="message_app_removed">%1$s foi removido.</string>
+    <string name="message_app_declined">A remoção de %1$s foi recusada.</string>
+    <string name="message_app_not_removed">%1$s não foi removido.</string>
+    <string name="message_preferences_failed">Não foi possível salvar a sua preferência.</string>
+    <plurals name="message_actions_processed">
+        <item quantity="one">%d novo pedido recebido.</item>
+        <item quantity="other">%d novos pedidos recebidos.</item>
+    </plurals>
+
+    <string name="notification_channel">Aprovações de remoção</string>
+    <string name="notification_title">Aprovação necessária</string>
+    <string name="notification_review_removal">Revise a remoção de %1$s</string>
+</resources>

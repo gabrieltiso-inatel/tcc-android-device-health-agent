@@ -14,7 +14,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="Device Health Agent"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.DeviceHealthAgent">
         <activity
