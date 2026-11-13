@@ -44,7 +44,7 @@ O resumo de armazenamento segue o mesmo fluxo de observação automática, em um
 
 O inventário de aplicativos segue o mesmo fluxo em um endpoint próprio e atualiza somente os snapshots atuais no controlador.
 
-O inventário de arquivos é executado por `collectFileInventory`. A fonte usa APIs oficiais para consultar mídia autorizada e diretórios escolhidos pelo usuário; somente metadados e referências opacas são serializados.
+O inventário de arquivos é coletado por `collectFileInventory` e sincronizado após remoções. A fonte usa APIs oficiais para consultar mídia autorizada e diretórios escolhidos pelo usuário; somente metadados e referências opacas são serializados.
 
 ### Ação recebida
 
@@ -107,3 +107,9 @@ O endereço do controlador é configurado antes do pareamento e persistido no Da
 - repository coordena, mas delega coleta, transporte e execução;
 - data sources conhecem apenas a API Android necessária à sua coleta;
 - `ControllerClient` não contém regras de interface ou execução de ações.
+
+## Distribuição e validação
+
+O aplicativo requer Android 8.0 (API 26) ou superior. O CI usa JDK 17 para executar testes unitários, Android Lint e builds de depuração do agente e do aplicativo descartável. O APK do agente é disponibilizado como artifact. Testes instrumentados são iniciados manualmente com um emulador ou dispositivo conectado. O fluxo está definido em [ci.yml](../.github/workflows/ci.yml).
+
+A build de depuração permite HTTP para avaliação. A distribuição de produção exige HTTPS e assinatura persistente. O uso de um controlador acessível publicamente também depende da proteção de acesso desse servidor.

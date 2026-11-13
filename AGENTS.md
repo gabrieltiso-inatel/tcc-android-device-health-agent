@@ -43,14 +43,15 @@ Concluído:
 - framework unificado de ações com origem `controller` ou `device`;
 - histórico compartilhado de ações;
 - telemetria, resumo de armazenamento e inventário de aplicativos;
-- inventário inicial de arquivos compartilhados e pastas autorizadas;
+- inventário e remoção de arquivos de pastas autorizadas e mídia acessível, com revalidação, consentimento e retomada;
+- pesquisa e paginação de inventários, filtro de histórico e atualização automática da visualização;
 - pareamento, autenticação, retry, expiração e idempotência;
 - `removeApplication` validado ponta a ponta com validação local antes da confirmação oficial, resultado decidido pelo estado real do pacote e reenvio idempotente;
 - configurações de tema, idioma (pt-BR e inglês) e permissões, com resumo de saúde no início.
 
 Próximo:
 
-- melhorar a apresentação e filtragem do histórico;
+- ampliar informações disponíveis sobre aplicativos e avaliar novas ações oficiais de manutenção;
 
 Depois:
 

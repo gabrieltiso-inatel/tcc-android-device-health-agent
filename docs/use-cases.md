@@ -4,7 +4,7 @@ Este documento registra o escopo funcional do aplicativo Android. Atualize o est
 
 O agent deve executar o máximo de ações oficiais de gerenciamento que o dispositivo permitir. Consentimento, notificação, retomada e histórico são partes do caso de uso, não motivos para abandonar a ação.
 
-## Concluído
+## Implementado
 
 ### Cadastrar dispositivo
 
@@ -23,7 +23,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - receber ações do controlador por polling em primeiro plano e WorkManager;
 - consultar imediatamente ao exibir a tela e a cada 3 segundos enquanto visível, com espera progressiva até 30 segundos em falhas;
 - iniciar ações locais com origem `device`;
-- executar `collectTelemetry`, `collectStorageSummary` e `collectAppInventory`;
+- executar `collectTelemetry`, `collectStorageSummary`, `collectAppInventory`, `collectFileInventory`, `removeApplication` e `removeFile`;
 - preservar resultados necessários para idempotência.
 
 ### Consultar armazenamento
@@ -35,7 +35,7 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 
 - coletar nome, identificador, versão e datas dos aplicativos instalados pelo usuário;
 - marcar o próprio agent como não removível, mantendo-o visível no inventário;
-- excluir aplicativos identificados pelo Android como sistema;
+- omitir do inventário os aplicativos identificados pelo Android como sistema;
 - não acessar dados internos de outros aplicativos.
 - apresentar apps, pesquisar nomes e iniciar remoção local com a versão observada.
 
@@ -72,13 +72,13 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 - decidir o resultado pelo estado real do pacote após a confirmação;
 - registrar o resultado sem repetir o efeito, reenviá-lo após falhas de conexão e sincronizar o inventário depois da decisão.
 
-## Parcial
-
 ### Sincronizar estado automaticamente
 
 - telemetria básica, armazenamento e inventário de aplicativos já são sincronizados automaticamente;
 - com a tela visível, sincronizar imediatamente e repetir telemetria a cada 30 segundos, armazenamento a cada 1 minuto e apps a cada 5 minutos; intervalos configuráveis em `SyncIntervals.kt`;
-- sincronizações automáticas futuras não devem gerar histórico de ações.
+- em segundo plano, usar WorkManager para telemetria, armazenamento, apps e consulta de ações em intervalos de 15 minutos, sujeitos às restrições do Android;
+- atualizar os snapshots sem criar entradas no histórico de ações;
+- coletar arquivos mediante solicitação explícita e atualizar o inventário após remoções.
 
 ### Remover arquivo
 
@@ -92,13 +92,11 @@ O agent deve executar o máximo de ações oficiais de gerenciamento que o dispo
 
 ## Planejado
 
-- melhorar a apresentação e filtragem do histórico;
 - ampliar informações disponíveis sobre aplicativos;
-- acessar arquivos escolhidos pelo usuário através das APIs oficiais;
 - ampliar ações de gerenciamento de aplicações possíveis com consentimento;
 - avaliar capacidades adicionais em modo Device Owner/Profile Owner.
 
-`removeApplication` é a intenção compartilhada. O agent decide internamente se a execução exige consentimento ou pode usar uma política administrativa validada.
+`removeApplication` e `removeFile` são as intenções compartilhadas de remoção. A implementação atual usa aprovações e os mecanismos oficiais do Android. Estratégias administrativas com Device Owner/Profile Owner permanecem como possibilidades futuras.
 
 ## Limitações da plataforma
 
