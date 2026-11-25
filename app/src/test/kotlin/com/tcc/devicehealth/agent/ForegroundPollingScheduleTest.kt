@@ -1,5 +1,6 @@
 package com.tcc.devicehealth.agent
 
+import com.tcc.devicehealth.agent.sync.ForegroundPollingSchedule
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

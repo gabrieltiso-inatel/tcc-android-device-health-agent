@@ -1,56 +1,28 @@
 package com.tcc.devicehealth.agent
 
 import android.content.Context
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import java.util.concurrent.TimeUnit
 
 class ActionPollingWorker(
     applicationContext: Context,
     workerParameters: WorkerParameters,
 ) : CoroutineWorker(applicationContext, workerParameters) {
     override suspend fun doWork(): Result {
-        val repository = AndroidDeviceHealthRepository(
-            context = applicationContext,
-            controllerBaseUrl = BuildConfig.CONTROLLER_BASE_URL,
-        )
-        if (!repository.isPaired()) {
+        val dependencies = AgentDependencies(applicationContext)
+        val deviceRepository = dependencies.deviceRepository
+        val actionRepository = dependencies.actionRepository
+        if (!deviceRepository.isPaired()) {
             return Result.success()
         }
-        val telemetryResult = repository.sendTelemetry()
-        val storageResult = repository.syncStorageSummary()
-        val appResult = repository.syncAppInventory()
-        val actionResult = repository.checkActions()
-        return if (telemetryResult.isSuccess && storageResult.isSuccess && appResult.isSuccess && actionResult.isSuccess) {
+        val telemetryResult = deviceRepository.sendTelemetry()
+        val storageResult = deviceRepository.syncStorageSummary()
+        val appResult = dependencies.applicationRepository.syncApplications()
+        val pollingResult = actionRepository.processPendingActions()
+        return if (telemetryResult.isSuccess && storageResult.isSuccess && appResult.isSuccess && pollingResult.isSuccess) {
             Result.success()
         } else {
             Result.retry()
         }
-    }
-}
-
-object ActionPollingScheduler {
-    private const val workName = "action-polling"
-
-    fun schedule(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val request = PeriodicWorkRequestBuilder<ActionPollingWorker>(SyncIntervals.backgroundMinutes, TimeUnit.MINUTES)
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, SyncIntervals.backgroundBackoffSeconds, TimeUnit.SECONDS)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            workName,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            request,
-        )
     }
 }

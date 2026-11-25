@@ -19,6 +19,7 @@ Este repositório contém o agent Android do projeto Android Device Health, uma 
 - Ações explícitas podem ter origem `controller` ou `device`, usam o mesmo `ActionExecutor` e são registradas no histórico mantido pelo controlador.
 - As ações atuais são `collectTelemetry`, `collectStorageSummary`, `collectAppInventory`, `collectFileInventory`, `removeApplication` e `removeFile`.
 - Sincronizações automáticas representam estado observado e não devem criar entradas no histórico de ações.
+- O código se organiza em `model`, `data`, `actions`, `sync` e `ui`. Fontes retornam modelos tipados; JSON fica nos adaptadores HTTP e local, independentes entre si. `AgentDependencies` compõe os repositories, e `ForegroundSync` concentra os loops visíveis.
 - A UI mostra armazenamento, apps e arquivos a partir de `GET /api/devices/:deviceId/state`, autenticado por dispositivo; a atualização da visualização usa `SyncIntervals.screenRefreshMillis` sem criar ações. Remoções locais preservam revisão/versão esperada e o mesmo fluxo de aprovação. Nomes de arquivos em aprovações ficam persistidos apenas como informação de apresentação.
 - Ações destrutivas ou privilegiadas exigem iniciativa explícita e devem respeitar permissões, consentimento e limitações de Device Owner/Profile Owner do Android.
 
@@ -30,7 +31,8 @@ Diretrizes permanentes:
 
 - O agent implementa as intenções do contrato compartilhado e mapeia detalhes da plataforma Android internamente.
 - `capabilities` são capacidades anunciadas pelo agent para o controlador; não são permissões Android nem devem expor diretamente a política usada para executar uma ação.
-- Preservar os padrões existentes antes de criar novas abstrações: `ActionExecutor`, `DeviceHealthRepository`, `ControllerClient`, resultados persistidos por `actionId` e snapshots sincronizados pelo repository.
+- O vocabulário usa ação para a solicitação acompanhável, aprovação para a decisão do usuário e resultado para o retorno da execução. `submitAction` inicia uma ação local; `processPendingActions` processa ações recebidas; `review...` revisa uma aprovação. `LocalActionDataSource` persiste resultados e aprovações, e `AgentPreferencesDataSource` mantém identidade e configurações.
+- Preservar os padrões existentes antes de criar novas abstrações: `ActionExecutor`, `DeviceRepository`, `ApplicationRepository`, `FileRepository`, `ActionRepository`, `ControllerApiClient`, resultados persistidos por `actionId` e snapshots sincronizados pelo repository.
 - Consentimento do usuário, permissões e Device Owner/Profile Owner são estratégias de execução. Não criar uma ação diferente apenas para cada estratégia.
 - O objetivo do agent é executar o máximo de ações oficiais de gerenciamento que o dispositivo permitir, não apenas coletar telemetria.
 - Ações que exigem consentimento, notificação ou retomada continuam no escopo; devem ser persistidas, explicadas ao usuário e registradas no histórico.
@@ -49,15 +51,11 @@ Concluído:
 - `removeApplication` validado ponta a ponta com validação local antes da confirmação oficial, resultado decidido pelo estado real do pacote e reenvio idempotente;
 - configurações de tema, idioma (pt-BR e inglês) e permissões, com resumo de saúde no início.
 
-Próximo:
+Foco atual:
 
-- ampliar informações disponíveis sobre aplicativos e avaliar novas ações oficiais de manutenção;
-
-Depois:
-
-- validar e ampliar `removeFile` para outras fontes somente através das APIs oficiais e consentimento necessário;
-- ampliar ações de gerenciamento possíveis no agent comum;
-- avaliar capacidades adicionais com Device Owner/Profile Owner.
+- consolidar a refatoração de legibilidade e estudar os fluxos para a apresentação;
+- preservar funcionalidades, contratos HTTP, snapshots e dados persistidos;
+- manter testes, build, lint e documentação alinhados à estrutura atual.
 
 No inventário, o próprio agent continua visível para diagnóstico, mas informa `canRemove=false`; a decisão de remoção também é validada novamente no momento da execução.
 

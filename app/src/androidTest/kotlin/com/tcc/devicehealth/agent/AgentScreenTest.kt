@@ -4,6 +4,13 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.tcc.devicehealth.agent.model.ApplicationInventory
+import com.tcc.devicehealth.agent.model.InstalledApp
+import com.tcc.devicehealth.agent.model.LatestDeviceSnapshots
+import com.tcc.devicehealth.agent.model.PendingFileRemoval
+import com.tcc.devicehealth.agent.ui.AgentScreen
+import com.tcc.devicehealth.agent.ui.AgentUiState
+import com.tcc.devicehealth.agent.ui.DeviceHealthTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -14,8 +21,8 @@ class AgentScreenTest {
 
     @Test
     fun showsSavedAppsAndDoesNotOfferRemovalForTheAgent() {
-        showAgent(AgentUiState(isReady = true, isPaired = true, snapshots = DeviceSnapshots(
-            apps = AppInventory("2026-10-31T12:00:00Z", listOf(InstalledApp("agent", "Device Health Agent", false, "0.1", 1))),
+        showAgent(AgentUiState(isReady = true, isPaired = true, snapshots = LatestDeviceSnapshots(
+            apps = ApplicationInventory("2026-10-31T12:00:00Z", listOf(InstalledApp("agent", "Device Health Agent", false, "0.1", 1))),
         )))
 
         compose.onNodeWithText("Apps", useUnmergedTree = true).performClick()
@@ -28,8 +35,8 @@ class AgentScreenTest {
     @Test
     fun decliningAFileFromThePendingListTargetsThatApproval() {
         var declined: String? = null
-        val approval = PendingFileApproval("file-action", "file", "revision", "Family notes.txt")
-        showAgent(AgentUiState(isReady = true, isPaired = true, pendingFileApprovals = listOf(approval)), onDeclineFile = { declined = it.actionId })
+        val approval = PendingFileRemoval("file-action", "file", "revision", "Family notes.txt")
+        showAgent(AgentUiState(isReady = true, isPaired = true, pendingFileRemovals = listOf(approval)), onDeclineFile = { declined = it.actionId })
 
         compose.onNodeWithText("Approvals", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Remove Family notes.txt?").assertIsDisplayed()
@@ -38,14 +45,14 @@ class AgentScreenTest {
         compose.runOnIdle { assertEquals("file-action", declined) }
     }
 
-    private fun showAgent(state: AgentUiState, onDeclineFile: (PendingFileApproval) -> Unit = {}) {
+    private fun showAgent(state: AgentUiState, onDeclineFile: (PendingFileRemoval) -> Unit = {}) {
         compose.setContent {
             DeviceHealthTheme {
                 AgentScreen(
                     state = state,
-                    onPairingCodeChange = {}, onControllerAddressChange = {}, onPair = {}, onExecuteAction = {},
-                    onRequestApplicationRemoval = {}, onCancelApplicationRemoval = {},
-                    onRequestFileRemoval = {}, onCancelFileRemoval = onDeclineFile,
+                    onPairingCodeChange = {}, onControllerAddressChange = {}, onPair = {}, onSubmitAction = {},
+                    onReviewApplicationRemoval = {}, onCancelApplicationRemoval = {},
+                    onReviewFileRemoval = {}, onCancelFileRemoval = onDeclineFile,
                     onDismissFileRemoval = {}, onRemoveApplication = {}, onRemoveFile = {},
                     onConfirmFileRemoval = {}, onCollectFileInventory = {}, onSelectFileFolder = {}, onRequestMediaAccess = {},
                 )

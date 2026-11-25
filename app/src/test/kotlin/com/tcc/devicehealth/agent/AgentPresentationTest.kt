@@ -1,24 +1,38 @@
 package com.tcc.devicehealth.agent
 
+import com.tcc.devicehealth.agent.model.Action
+import com.tcc.devicehealth.agent.model.DeviceTelemetry
+import com.tcc.devicehealth.agent.model.LatestDeviceSnapshots
+import com.tcc.devicehealth.agent.model.PendingApplicationRemoval
+import com.tcc.devicehealth.agent.model.PendingFileRemoval
+import com.tcc.devicehealth.agent.model.StorageSummary
+import com.tcc.devicehealth.agent.ui.AgentUiState
+import com.tcc.devicehealth.agent.ui.HealthVerdict
+import com.tcc.devicehealth.agent.ui.RelativeTime
+import com.tcc.devicehealth.agent.ui.emptyListMessage
+import com.tcc.devicehealth.agent.ui.healthVerdict
+import com.tcc.devicehealth.agent.ui.pendingApprovalCount
+import com.tcc.devicehealth.agent.ui.relativeTime
+import com.tcc.devicehealth.agent.ui.removalInProgress
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.Instant
 
 class AgentPresentationTest {
     @Test
     fun pendingCountIncludesFileAndApplicationApprovals() {
         val state = AgentUiState(
-            pendingApprovals = listOf(PendingApproval("app-action", "app", 1)),
-            pendingFileApprovals = listOf(PendingFileApproval("file-action", "file", "revision")),
+            pendingApplicationRemovals = listOf(PendingApplicationRemoval("app-action", "app", 1)),
+            pendingFileRemovals = listOf(PendingFileRemoval("file-action", "file", "revision")),
         )
         assertEquals(2, pendingApprovalCount(state))
     }
 
     @Test
     fun onlyActiveRemovalsOfTheSameTargetDisableRemoval() {
-        val pending = DeviceAction("action", "removeFile", fileId = "file", origin = "controller", status = "awaiting_approval", requestedAt = "2026-10-31T12:00:00Z")
+        val pending = Action("action", "removeFile", fileId = "file", origin = "controller", status = "awaiting_approval", requestedAt = "2026-10-31T12:00:00Z")
         assertTrue(removalInProgress(listOf(pending), fileId = "file"))
         assertFalse(removalInProgress(listOf(pending), fileId = "other-file"))
         assertFalse(removalInProgress(listOf(pending.copy(status = "completed")), fileId = "file"))
@@ -26,7 +40,7 @@ class AgentPresentationTest {
 
     @Test
     fun healthIsGoodWhenNothingNeedsAttention() {
-        val state = AgentUiState(telemetry = telemetry(battery = 80, charging = false), snapshots = DeviceSnapshots(storage = storage(used = 40)))
+        val state = AgentUiState(telemetry = telemetry(battery = 80, charging = false), snapshots = LatestDeviceSnapshots(storage = storage(used = 40)))
         assertEquals(HealthVerdict.Healthy, healthVerdict(state))
     }
 
@@ -34,7 +48,7 @@ class AgentPresentationTest {
     fun pendingApprovalsComeBeforeOtherWarnings() {
         val state = AgentUiState(
             telemetry = telemetry(battery = 5, charging = false),
-            pendingApprovals = listOf(PendingApproval("app-action", "app", 1)),
+            pendingApplicationRemovals = listOf(PendingApplicationRemoval("app-action", "app", 1)),
         )
         assertEquals(HealthVerdict.ApprovalsWaiting(1), healthVerdict(state))
     }
@@ -47,7 +61,7 @@ class AgentPresentationTest {
 
     @Test
     fun almostFullStorageIsReported() {
-        val state = AgentUiState(snapshots = DeviceSnapshots(storage = storage(used = 95)))
+        val state = AgentUiState(snapshots = LatestDeviceSnapshots(storage = storage(used = 95)))
         assertEquals(HealthVerdict.StorageAlmostFull, healthVerdict(state))
     }
 

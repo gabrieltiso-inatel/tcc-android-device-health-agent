@@ -1,19 +1,20 @@
 package com.tcc.devicehealth.agent
 
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +22,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tcc.devicehealth.agent.data.android.PackageManagerDataSource
+import com.tcc.devicehealth.agent.sync.ActionPollingScheduler
+import com.tcc.devicehealth.agent.ui.AgentScreen
+import com.tcc.devicehealth.agent.ui.AgentViewModel
+import com.tcc.devicehealth.agent.ui.AgentViewModelFactory
+import com.tcc.devicehealth.agent.ui.DeviceHealthTheme
+import com.tcc.devicehealth.agent.ui.LocalizedContent
+import com.tcc.devicehealth.agent.ui.PermissionStatus
+import com.tcc.devicehealth.agent.ui.isDark
 
 class MainActivity : ComponentActivity() {
     override fun onStart() {
@@ -38,9 +48,14 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
+    private val dependencies by lazy { AgentDependencies(applicationContext) }
+
     private val viewModel: AgentViewModel by viewModels {
         AgentViewModelFactory(
-            AndroidDeviceHealthRepository(applicationContext, BuildConfig.CONTROLLER_BASE_URL),
+            dependencies.deviceRepository,
+            dependencies.actionRepository,
+            dependencies.applicationRepository,
+            dependencies.fileRepository,
         )
     }
 
@@ -100,19 +115,19 @@ class MainActivity : ComponentActivity() {
                     refreshPermissions()
                     viewModel.onMediaAccessResult(results.values.any { it })
                 }
-                LaunchedEffect(state.approvalRequest) {
-                    state.approvalRequest?.let { approval ->
-                        removalLauncher.launch(ApplicationRemovalDataSource.createIntent(approval))
+                LaunchedEffect(state.applicationConfirmation) {
+                    state.applicationConfirmation?.let { approval ->
+                        removalLauncher.launch(PackageManagerDataSource.createRemovalIntent(approval))
                         viewModel.onApplicationRemovalConfirmationStarted(approval)
                     }
                 }
-                LaunchedEffect(state.platformFileRemovalRequest) {
-                    state.platformFileRemovalRequest?.let { request ->
+                LaunchedEffect(state.platformFileConfirmation) {
+                    state.platformFileConfirmation?.let { request ->
                         mediaActionId = request.actionId
                         try {
                             mediaRemovalLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
-                            viewModel.fileRemovalRequestLaunched()
-                        } catch (_: android.content.IntentSender.SendIntentException) {
+                            viewModel.onFileConfirmationLaunched()
+                        } catch (_: IntentSender.SendIntentException) {
                             viewModel.handlePlatformFileRemovalResult(request.actionId, false, true)
                         }
                     }
@@ -133,16 +148,16 @@ class MainActivity : ComponentActivity() {
                         onPairingCodeChange = viewModel::updatePairingCode,
                         onControllerAddressChange = viewModel::updateControllerAddress,
                         onPair = viewModel::pair,
-                        onExecuteAction = viewModel::executeAction,
-                        onRequestApplicationRemoval = viewModel::requestApplicationRemoval,
+                        onSubmitAction = viewModel::submitAction,
+                        onReviewApplicationRemoval = viewModel::reviewApplicationRemoval,
                         onCancelApplicationRemoval = viewModel::cancelApplicationRemoval,
-                        onRequestFileRemoval = viewModel::requestFileRemoval,
+                        onReviewFileRemoval = viewModel::reviewFileRemoval,
                         onCancelFileRemoval = viewModel::cancelFileRemoval,
                         onDismissFileRemoval = viewModel::dismissFileRemoval,
                         onRemoveApplication = viewModel::removeApplication,
                         onRemoveFile = viewModel::removeFile,
                         onConfirmFileRemoval = { viewModel.handleFileRemovalResult(true) },
-                        onCollectFileInventory = { viewModel.executeAction("collectFileInventory") },
+                        onCollectFileInventory = { viewModel.submitAction("collectFileInventory") },
                         onSelectFileFolder = { folderLauncher.launch(null) },
                         onRequestMediaAccess = {
                             val permissions = if (android.os.Build.VERSION.SDK_INT >= 33) {

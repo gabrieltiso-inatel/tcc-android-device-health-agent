@@ -49,7 +49,7 @@ Essas tarefas também são executadas pelo CI em pushes e pull requests. O APK �
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
-Os intervalos ficam em [SyncIntervals.kt](app/src/main/kotlin/com/tcc/devicehealth/agent/SyncIntervals.kt). Em primeiro plano, a consulta de ações ocorre a cada 3 segundos, com espera progressiva após falhas. Em segundo plano, o WorkManager utiliza intervalos de 15 minutos, sujeitos às restrições do Android. A visualização dos dados recebidos e as coletas possuem intervalos próprios.
+Os intervalos ficam em [SyncIntervals.kt](app/src/main/kotlin/com/tcc/devicehealth/agent/sync/SyncIntervals.kt). Em primeiro plano, a consulta de ações ocorre a cada 3 segundos, com espera progressiva após falhas. Em segundo plano, o WorkManager utiliza intervalos de 15 minutos, sujeitos às restrições do Android. A visualização dos dados recebidos e as coletas possuem intervalos próprios.
 
 ## Dados para testes manuais
 
@@ -67,6 +67,6 @@ O script procura ADB no PATH e nos locais padrão do SDK. Para indicar outro exe
 
 ## Documentação
 
-- [Arquitetura](docs/architecture.md)
+- [Arquitetura e guia de leitura dos fluxos](docs/architecture.md)
 - [Casos de uso](docs/use-cases.md)
 - [Controlador](https://github.com/gabrieltiso-inatel/tcc-android-device-health-controller)

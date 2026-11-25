@@ -1,5 +1,6 @@
 package com.tcc.devicehealth.agent
 
+import com.tcc.devicehealth.agent.sync.syncPeriodically
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

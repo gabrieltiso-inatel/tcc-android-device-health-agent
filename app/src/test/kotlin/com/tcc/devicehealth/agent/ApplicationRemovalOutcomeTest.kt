@@ -1,5 +1,9 @@
 package com.tcc.devicehealth.agent
 
+import com.tcc.devicehealth.agent.actions.applicationRemovalDecisionResult
+import com.tcc.devicehealth.agent.actions.applicationRemovalReviewResult
+import com.tcc.devicehealth.agent.data.android.ApplicationChangedException
+import com.tcc.devicehealth.agent.model.ApplicationRemovalDecision
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

@@ -1,5 +1,6 @@
 package com.tcc.devicehealth.agent
 
+import com.tcc.devicehealth.agent.data.remote.normalizeControllerAddress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
